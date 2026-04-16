@@ -105,7 +105,6 @@ public: //-- 設定項目取得用インターフェイス
 	const bool    mdirsm(){ return m_MDirSm; }// 同じディレクトリに解凍？
 	const int     mkdir() { return m_MkDir; } // 0:x 1:file 2:dir 3:o
 	const bool    mnonum(){ return m_MNoNum; }// 数字省略
-	const char*   kill()  { return m_Kill; }// OFFにする内蔵ルーチン
 	// Section: Compress
 	const kiPath& cdir()  { return m_CDir; }  // 圧縮先
 	const bool    cdirsm(){ return m_CDirSm; }// 同じディレクトリに圧縮？
@@ -136,8 +135,7 @@ private: //-- 内部変数
 	kiStr  m_CMhd;
 	bool   m_MNoNum;
 	bool   m_SCSendTo,m_SCDesktop;
-	kiStr  m_Kill;
-	bool   m_SECmp, m_SEExt, m_bAsso[13];
+	bool   m_SECmp, m_SEExt;
 	bool   m_MiniBoot;
 	bool   m_OldVer;
 	bool   m_OneExt, m_ZeroExt;

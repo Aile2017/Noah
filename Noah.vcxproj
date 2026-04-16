@@ -104,14 +104,9 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ArcACE.cpp" />
     <ClCompile Include="ArcB2e.cpp" />
-    <ClCompile Include="ArcCpt.cpp" />
-    <ClCompile Include="ArcDLL.cpp" />
     <ClCompile Include="Archiver.cpp" />
-    <ClCompile Include="ArcMsc.cpp" />
     <ClCompile Include="kilib\kl_app.cpp" />
-    <ClCompile Include="kilib\kl_carc.cpp" />
     <ClCompile Include="kilib\kl_cmd.cpp" />
     <ClCompile Include="kilib\kl_dnd.cpp" />
     <ClCompile Include="kilib\kl_file.cpp" />
@@ -131,16 +126,11 @@
     <ClCompile Include="SubDlg.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ArcACE.h" />
     <ClInclude Include="ArcB2e.h" />
-    <ClInclude Include="ArcCpt.h" />
-    <ClInclude Include="ArcDLL.h" />
     <ClInclude Include="Archiver.h" />
-    <ClInclude Include="ArcMsc.h" />
     <ClInclude Include="kilib\kilib.h" />
     <ClInclude Include="kilib\kilibext.h" />
     <ClInclude Include="kilib\kl_app.h" />
-    <ClInclude Include="kilib\kl_carc.h" />
     <ClInclude Include="kilib\kl_cmd.h" />
     <ClInclude Include="kilib\kl_dnd.h" />
     <ClInclude Include="kilib\kl_file.h" />
@@ -158,7 +148,6 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SubDlg.h" />
-    <ClInclude Include="unacedef.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Noah.rc" />

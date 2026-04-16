@@ -170,51 +170,23 @@ BEGIN
                     WS_TABSTOP,32,95,64,10
 END
 
-IDD_WINCFG DIALOG DISCARDABLE  0, 0, 219, 121
+IDD_WINCFG DIALOG DISCARDABLE  0, 0, 219, 77
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Windows拡張"
 FONT 9, "ＭＳ Ｐゴシック"
 BEGIN
-    GROUPBOX        "関連付け",IDC_STATIC,7,7,205,39
-    CONTROL         "&LZH",IDC_LZH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,
-                    18,23,9
-    CONTROL         "&ZIP",IDC_ZIP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,13,
-                    30,23,10
-    CONTROL         "&CAB",IDC_CAB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,40,
-                    18,26,10
-    CONTROL         "&RAR",IDC_RAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,40,
-                    30,25,9
-    CONTROL         "&TAR",IDC_TAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,68,
-                    18,26,10
-    CONTROL         "&YZ1",IDC_YZ1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,68,
-                    30,23,9
-    CONTROL         "&GCA",IDC_GCA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,
-                    18,25,10
-    CONTROL         "AR&J",IDC_ARJ,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,97,
-                    30,24,10
-    CONTROL         "&BGA",IDC_BGA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,126,
-                    18,25,9
-    CONTROL         "AC&E",IDC_ACE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,126,
-                    30,25,9
-    CONTROL         "C&PT",IDC_CPT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,155,
-                    18,26,9
-    CONTROL         "JA&K",IDC_JAK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,155,
-                    30,26,9
-    CONTROL         "&7Z",IDC_7Z,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,182,
-                    18,23,10
-    PUSHBUTTON      "他",IDC_ASS,190,30,17,14
-    GROUPBOX        "右ドラッグ＆ドロップ",IDC_STATIC,7,51,132,29
+    GROUPBOX        "右ドラッグ＆ドロップ",IDC_STATIC,7,7,132,29
     CONTROL         "ここに圧縮(&H)",IDC_CMP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,15,63,57,10
+                    WS_TABSTOP,15,19,57,10
     CONTROL         "ここに解凍(&X)",IDC_MLT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,75,63,56,10
-    GROUPBOX        "ショートカット",IDC_STATIC,7,86,132,28
+                    WS_TABSTOP,75,19,56,10
+    GROUPBOX        "ショートカット",IDC_STATIC,7,42,132,28
     CONTROL         "送る(&S)",IDC_SND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    15,98,37,10
+                    15,54,37,10
     CONTROL         "デスクトップ(&D)",IDC_DSK,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,75,97,60,10
+                    WS_TABSTOP,75,53,60,10
     LTEXT           "※ ユーザにadmin権限がないため、関連付けに失敗する可能性があります。",
-                    IDC_NOADMIN,146,57,62,49
+                    IDC_NOADMIN,146,13,62,49
 END
 
 IDD_INFCFG DIALOG DISCARDABLE  0, 0, 219, 97
@@ -450,7 +422,7 @@ BEGIN
     DEFPUSHBUTTON   "&View",IDC_SHOW,75,3,19,14
 END
 
-IDD_WINCFG DIALOG DISCARDABLE  0, 0, 219, 121
+IDD_WINCFG DIALOG DISCARDABLE  0, 0, 219, 77
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Windows"
 FONT 9, "MS Sans Serif"
