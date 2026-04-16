@@ -26,7 +26,7 @@ static int CALLBACK __ki__ofp( HWND w, UINT m, LPARAM l, LPARAM d )
 
 bool kiSUtil::getFolderDlg( char* buf, HWND par, const char* title, const char* def )
 {
-	// î•ñƒZƒbƒg
+	// ï¿½ï¿½ï¿½Zï¿½bï¿½g
 	BROWSEINFO bi;
 	ki_memzero( &bi, sizeof(bi) );
 	bi.hwndOwner      = par;
@@ -34,16 +34,16 @@ bool kiSUtil::getFolderDlg( char* buf, HWND par, const char* title, const char* 
 	bi.lpszTitle      = title;
 	bi.ulFlags        = BIF_RETURNONLYFSDIRS | BIF_DONTGOBELOWDOMAIN;
 	bi.lpfn           = __ki__ofp;
-	bi.lParam         = (long)def;
+	bi.lParam         = (LPARAM)def;
 
-	// ƒ_ƒCƒAƒƒO•\¦
+	// ï¿½_ï¿½Cï¿½Aï¿½ï¿½ï¿½Oï¿½\ï¿½ï¿½
 	ITEMIDLIST* id = ::SHBrowseForFolder( &bi );
 	if( id==NULL )
 		return false;
 	::SHGetPathFromIDList( id, buf );
 	app()->shellFree( id );
 
-	// I—¹
+	// ï¿½Iï¿½ï¿½
 	return true;
 }
 
