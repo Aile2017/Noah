@@ -86,6 +86,27 @@ Noah/
 
 ---
 
+## INI File
+
+Settings are stored in `Noah.ini` in the same folder as the executable, under a section named after the Windows user account. The file is created automatically on first save.
+
+| Key | Default | Description |
+|---|---|---|
+| `Mode` | `2` | Operating mode: `0`=compress only / `1`=compress preferred / `2`=extract preferred / `3`=extract only |
+| `MDir` | Desktop | Extraction destination folder. Prefix `@` means same folder as the archive |
+| `MkDir` | `2` | Create subfolder on extraction: `0`=never / `1`=when single file / `2`=when multiple files / `3`=always. Add `16` to omit numeric suffix |
+| `MODir` | `1` | Open destination folder after extraction (`1`=yes, `0`=no) |
+| `CDir` | Desktop | Compression destination folder. Prefix `@` means same folder as source |
+| `CExt` | `zip` | Default compression format (extension used to select the B2E script) |
+| `CMhd` | `7-zip` | Default compression method passed to the archiver |
+| `CODir` | `1` | Open destination folder after compression (`1`=yes, `0`=no) |
+| `MiniBoot` | `0` | Start minimized (`1`=yes) |
+| `OneExt` | `0` | Treat only the last extension as part of the archive name (`1`=yes) |
+| `NoExt` | `0` | Treat no extension as part of the archive name, i.e. always strip (`1`=yes) |
+| `MultiBootLimit` | `4` | Maximum number of simultaneous Noah instances |
+
+---
+
 ## License
 
 Basically free to use in any way. See `ReadMe.txt` for the original terms.

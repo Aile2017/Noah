@@ -60,6 +60,26 @@ Noah itself has no built-in archive engine — it delegates all archive operatio
 
 <hr>
 
+<h2>INI File</h2>
+<p>Settings are stored in <code>Noah.ini</code> in the same folder as the executable, under a section named after the Windows user account. The file is created automatically on first save.</p>
+<table>
+  <tr><th>Key</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>Mode</code></td><td><code>2</code></td><td>Operating mode: <code>0</code>=compress only / <code>1</code>=compress preferred / <code>2</code>=extract preferred / <code>3</code>=extract only</td></tr>
+  <tr><td><code>MDir</code></td><td>Desktop</td><td>Extraction destination folder. Prefix <code>@</code> means same folder as the archive</td></tr>
+  <tr><td><code>MkDir</code></td><td><code>2</code></td><td>Create subfolder on extraction: <code>0</code>=never / <code>1</code>=when single file / <code>2</code>=when multiple files / <code>3</code>=always. Add <code>16</code> to omit numeric suffix</td></tr>
+  <tr><td><code>MODir</code></td><td><code>1</code></td><td>Open destination folder after extraction (<code>1</code>=yes, <code>0</code>=no)</td></tr>
+  <tr><td><code>CDir</code></td><td>Desktop</td><td>Compression destination folder. Prefix <code>@</code> means same folder as source</td></tr>
+  <tr><td><code>CExt</code></td><td><code>zip</code></td><td>Default compression format (extension used to select the B2E script)</td></tr>
+  <tr><td><code>CMhd</code></td><td><code>7-zip</code></td><td>Default compression method passed to the archiver</td></tr>
+  <tr><td><code>CODir</code></td><td><code>1</code></td><td>Open destination folder after compression (<code>1</code>=yes, <code>0</code>=no)</td></tr>
+  <tr><td><code>MiniBoot</code></td><td><code>0</code></td><td>Start minimized (<code>1</code>=yes)</td></tr>
+  <tr><td><code>OneExt</code></td><td><code>0</code></td><td>Treat only the last extension as part of the archive name (<code>1</code>=yes)</td></tr>
+  <tr><td><code>NoExt</code></td><td><code>0</code></td><td>Treat no extension as part of the archive name, i.e. always strip (<code>1</code>=yes)</td></tr>
+  <tr><td><code>MultiBootLimit</code></td><td><code>4</code></td><td>Maximum number of simultaneous Noah instances</td></tr>
+</table>
+
+<hr>
+
 <h2>Credits</h2>
 <h3>Application Icon</h3>
 <p><a href="https://icon-icons.com/icon/archiver/37045">Archiver - free Icon in PNG and SVG</a> by <a href="https://icon-icons.com/">icon-icons.com</a>, used under free for commercial use license.</p>
