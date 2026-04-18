@@ -5,29 +5,29 @@
 #define AFX_KIWINDOW_H__26105B94_1E36_42FA_8916_C2F7FB9EF994__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// kiWindow : Window�̊ȒP�ȊǗ�
+// kiWindow : Simple management of Window
 
 class kiWindow
 {
 friend void kilib_startUp();
 
-private: //-- �O���[�o���ȏ����������Ȃ� ---------------------
+private: //-- Global initialization etc. ---------------------
 
 	static void init();
 	static void finish();
 
-public: //-- �O�����C���^�[�t�F�C�X --------------------------
+public: //-- Public interface --------------------------
 
-	// �֘A�t�����Ă���HWND
+	// Associated HWND
 	HWND hwnd()
 		{
 			return m_hWnd;
 		}
 
-	// ����Window�p�ɃA�N�Z�����[�^�����[�h
+	// Load accelerator for the window
 	void loadAccel( UINT id );
 
-	// �E�C���h�E���܂��c���Ă��邩�ǂ����`�F�b�N
+	// Check whether the window is still alive
 	bool isAlive()
 		{
 			if( !m_hWnd )
@@ -38,32 +38,32 @@ public: //-- �O�����C���^�[�t�F�C�X ----------------
 			return false;
 		}
 
-	// �e
+	// Parent
 	kiWindow* parent()
 		{
 			return kiwnd( ::GetParent( hwnd() ) );
 		}
 
-	// ���b�Z�[�W���M
-	int sendMsg( UINT msg, WPARAM wp=0, LPARAM lp=0 )
+	// Send message
+	LRESULT sendMsg( UINT msg, WPARAM wp=0, LPARAM lp=0 )
 		{
 			return ::SendMessage( hwnd(), msg, wp, lp );
 		}
 
-	// [static] �L���[�ɂ��郁�b�Z�[�W��S�ď���
+	// [static] Process all queued messages
 	static void msg();
 
-	// [static] ���b�Z�[�W���[�v���܂킷�B
+	// [static] Run the message loop.
 	enum msglooptype {PEEK, GET};
 	static void msgLoop( msglooptype type = GET );
 
-	// [static] Window�������I�� front ��
+	// [static] Force window to front
 	static void setFront( HWND wnd );
 
-	// [static] Window�𒆉���
+	// [static] Center the window
 	static void setCenter( HWND wnd, HWND rel=NULL );
 
-	// [static] HWND -> kiWindow ( ��������� )
+	// [static] HWND -> kiWindow (if any)
 	static kiWindow* kiwnd( HWND wnd )
 		{
 			kiWindow* ptr = (kiWindow*)::GetWindowLongPtr( wnd, GWLP_USERDATA );
@@ -72,22 +72,22 @@ public: //-- �O�����C���^�[�t�F�C�X ----------------
 			return ptr;
 		}
 
-protected: //-- �h���N���X���� -----------------------------
+protected: //-- For derived classes -----------------------------
 
-	// �h���N���X�́A�쐬���O�ɃR�����ĂԂ��ƁB
+	// Derived classes must call this just before creation.
 	static void preCreate( kiWindow* wnd )
 		{ st_pCurInit = wnd; }
-	// �j�����O�ɃR�����ĂԂ��ƁB
+	// Call this just before destruction.
 	void detachHwnd();
-	// ��������GET/POST���b�Z�[�W���[�v���~
+	// Temporarily stop the GET/POST message loop
 	static void loopbreak()
 		{
 			loopbreaker = true;
 		}
 
-private: //-- �������� -------------------------------------
+private: //-- Internal processing -------------------------------------
 
-	// �E�C���h�E�n���h���ݒ�
+	// Set window handle
 	static LRESULT CALLBACK CBTProc( int code, WPARAM wp, LPARAM lp );
 	static HHOOK st_hHook;
 	static kiWindow* st_pCurInit;
@@ -96,13 +96,13 @@ private: //-- �������� -------------------------------------
 			m_hWnd = wnd;
 		}
 
-	// �E�C���h�E���ێ��p�ϐ�
+	// Variable for holding window info
 	HWND m_hWnd;
 	HACCEL m_hAccel;
-	// �_�C�A���O���b�Z�[�W
+	// Dialog message
 	virtual bool isDlgMsg( MSG* msg )
 		{ return false; }
-	// GET���[�v�ꎞ��������
+	// Temporarily exit GET loop
 	static bool loopbreaker;
 
 protected:
@@ -112,32 +112,32 @@ public:
 };
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// kiDialog : Dialog��kiWindow�Ƃ��ĊǗ�����
+// kiDialog : Manage Dialog as kiWindow
 
 class kiDialog : public kiWindow
 {
-public: //-- �O�����C���^�[�t�F�C�X --------------------------
+public: //-- Public interface --------------------------
 
-	// ���[�_���_�C�A���O�Ƃ��Ď��s
+	// Execute as modal dialog
 	virtual void doModal( HWND parent=NULL );
 
-	// ���[�h���X�_�C�A���O�Ƃ��č쐬
+	// Create as modeless dialog
 	virtual void createModeless( HWND parent=NULL );
 
-	// �I���R�[�h�擾
+	// Get exit code
 	UINT getEndCode()
 		{
 			return m_EndCode;
 		}
 
-	// ���[�_�����ۂ�
+	// Whether modal
 	bool isModal()
 		{
 			return m_bStateModal;
 		}
 
-	// �_�C�A���O�A�C�e��
-	int sendMsgToItem( UINT id, UINT msg, WPARAM wp=0, LPARAM lp=0 )
+	// Dialog item
+	LRESULT sendMsgToItem( UINT id, UINT msg, WPARAM wp=0, LPARAM lp=0 )
 		{
 			return ::SendDlgItemMessage( hwnd(), id, msg, wp, lp );
 		}
@@ -146,44 +146,44 @@ public: //-- �O�����C���^�[�t�F�C�X ----------------
 			return ::GetDlgItem( hwnd(), id );
 		}
 
-protected: //-- �h���N���X���� -----------------------------
+protected: //-- For derived classes -----------------------------
 
-	// ���\�[�XID�ŏ�����
+	// Initialize with resource ID
 	kiDialog( UINT id );
 
-	// ���\�[�XID�擾
+	// Get resource ID
 	UINT getRsrcID()
 		{
 			return m_Rsrc;
 		}
 
-	// �I���R�[�h���Z�b�g
+	// Set exit code
 	void setEndCode( UINT endcode )
 		{
 			m_EndCode = endcode;
 		}
 
-	// ���[�_�����ۂ��̃t���O"�̂�"��ؑ�
+	// Toggle only the modal flag
 	void setState( bool modal )
 		{
 			m_bStateModal = modal;
 		}
 
-	// �I���R�[�h���Z�b�g���āA�I������( IDOK ��n���Ă� onOK() �͌Ă΂�Ȃ����Ƃɒ��ӁI )
+	// Set exit code and end ( Note: passing IDOK does NOT call onOK()! )
 	virtual void end( UINT endcode );
 
-	// �R�}���h�E���b�Z�[�W�������ɌĂ΂��
+	// Called when a command/message occurs
 
-		// �n�j -> onOK     -> if true end(IDOK)
+		// OK -> onOK     -> if true end(IDOK)
 		virtual bool onOK() {return true;}
-		// ��� -> onCancel -> if true end(IDCANCEL)
+		// Cancel -> onCancel -> if true end(IDCANCEL)
 		virtual bool onCancel() {return true;}
 		// WM_INITDIALOG      -> onInit
 		virtual BOOL onInit() {return FALSE;}
 		// WM_????            -> proc
 		virtual BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp ) {return FALSE;}
 
-private: //-- �������� -------------------------------------
+private: //-- Internal processing -------------------------------------
 
 	UINT m_EndCode;
 	UINT m_Rsrc;
@@ -196,7 +196,7 @@ private: //-- �������� -------------------------------------
 };
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// kiPropSheet : PropertySheet��kiWindow�Ƃ��ĊǗ�����B
+// kiPropSheet : Manage PropertySheet as kiWindow.
 
 #define IDAPPLY      (0x3021)
 #define ID_KIPS_HELP (0x0009)
@@ -205,22 +205,22 @@ class kiPropSheetPage : public kiDialog
 {
 friend class kiPropSheet;
 
-protected: //-- �h���N���X���� ----------------------------
+protected: //-- For derived classes ----------------------------
 
-	// �_�C�A���O��A�C�R����ID�ŏ�����
+	// Initialize with dialog or icon ID
 	kiPropSheetPage( UINT dlgid )
 		: kiDialog( dlgid ), m_hIcon( NULL ) {}
 	void setIcon( HICON h )
 		{ m_hIcon = h; }
 
-	// �n�j/�K�p -> page::onOK -> sheet::onOK -> (if ok �I��)
+	// OK/Apply -> page::onOK -> sheet::onOK -> (if ok, close)
 	// virtual bool onOK()
 	// WM_INITDIALOG
 	// virtual BOOL onInit()
-	// ���̑�
+	// Other
 	// virtual BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp )
 
-private: //-- �������� -------------------------------------
+private: //-- Internal processing -------------------------------------
 
 	void end( UINT endcode ) {}
 	void setInfo( PROPSHEETPAGE* p );
@@ -231,21 +231,21 @@ class kiPropSheet : public kiDialog
 {
 friend class kiPropSheetPage;
 
-public: //-- �O�����C���^�[�t�F�C�X --------------------------
+public: //-- Public interface --------------------------
 
-	// ���[�_���_�C�A���O�Ƃ��Ď��s
+	// Execute as modal dialog
 	void doModal( HWND parent );
 
-	// ���[�h���X�_�C�A���O�Ƃ��č쐬
+	// Create as modeless dialog
 	void createModeless( HWND parent );
 
-protected: //-- �h���N���X���� ----------------------------
+protected: //-- For derived classes ----------------------------
 
-	// �R���X�g���N�^�ӂ�Ł������������ׂ�
+	// Modify the fields below near the constructor
 	PROPSHEETHEADER m_Header;
 	kiArray<kiPropSheetPage*> m_Pages;
 
-	// �I��
+	// End
 	void end( UINT endcode );
 	// 
 	void sendOK2All()
@@ -255,22 +255,22 @@ protected: //-- �h���N���X���� ---------------------------
 				m_Pages[i]->onOK();
 	}
 
-	// �n�j/�K�p -> page::onOK -> sheet::onOK -> (if ok �I��)
+	// OK/Apply -> page::onOK -> sheet::onOK -> (if ok, close)
 	// virtual void onOK()
-	// �L�����Z�� -> sheet::onCancel -> �I��
+	// Cancel -> sheet::onCancel -> end
 	// virtual void onCancel()
 	// PSCB_INITIALIZED
 	// virtual BOOL onInit()
-	// �K�p
+	// Apply
 	virtual void onApply() {}
-	// �w���v
+	// Help
 	virtual void onHelp() {}
-	// ���̑��R�}���h
+	// Other commands
 	virtual void onCommand( UINT id ) {}
-	// �t�@�C���h���b�v
+	// File drop
 	virtual void onDrop( HDROP hdrop ) {}
 
-private: //-- �������� ---------------------------------------
+private: //-- Internal processing ---------------------------------------
 
 	void begin();
 	bool m_bStateModal;
@@ -292,7 +292,7 @@ public:
 };
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// kiListView : ListView�R���g���[���̊ȒP�ȃ��b�p
+// kiListView : Simple wrapper for ListView control
 
 class kiListView
 {

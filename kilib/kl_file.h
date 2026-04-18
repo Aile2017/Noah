@@ -5,29 +5,29 @@
 #define AFX_KIFILE_H__7D126C1E_3E5C_476E_9A4E_81CA8055621D__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// バイナリファイル操作
+// Binary file operations
 
 class kiFile
 {
 public: //-- static ----------------------------------------
 
-	// ファイルサイズ取得( 名前, エラー時に返したい値 )
+	// Get file size (name, value to return on error)
 	static unsigned long getSize( const char* fname, unsigned long err=0xffffffff );
 	static __int64 getSize64( const char* fname );
 
-public: //-- 外向きインターフェイス --------------------------
+public: //-- Public interface --------------------------
 
-	// 開いて閉じて
+	// Open and close
 	bool open( const char* filename, bool read=true, bool create=true );
 	void close();
 
-	// 読んで書いて
+	// Read and write
 	unsigned long read( unsigned char* buf, unsigned long len );
 	void write( const void* buf, unsigned long len );
 	int getc();
 	void putc( unsigned char c );
 
-	// シーク
+	// Seek
 	void seekTo( unsigned long pos )
 		{
 			if( !m_bReadMode ) flush();
@@ -48,7 +48,7 @@ public: //-- 外向きインターフェイス --------------------------
 					- m_nBufSize + m_nBufPos;
 		}
 
-	// 情報取得
+	// Get information
 	bool isOpened()
 		{
 			return m_hFile != INVALID_HANDLE_VALUE;
@@ -62,7 +62,7 @@ public: //-- 外向きインターフェイス --------------------------
 			return (m_nBufPos==0 && m_nBufSize==0);
 		}
 
-public: //-- 内部処理 -----------------------------------
+public: //-- Internal processing -----------------------------------
 
 	kiFile() : kifile_bufsize( 65536 )
 		{

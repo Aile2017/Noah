@@ -212,50 +212,19 @@ inline bool CArchiver::extCheck( const char* ext )
 	return false;
 }
 
-// �n���ꂽ�p�X�����񂪁A��΃p�X��".."���܂�ł����true
-static bool containsDangerPath( const char* path )
-{
-	// ��΃p�X
-	if( path[0]=='\\' || path[0]=='/' || path[0]!='\0' && path[1]==':' )
-		return true;
-
-	// ".."
-	for( const char* p=path; *p; )
-	{
-		const char* q = p;
-		while( *q!='\0' && *q!='\\' && *q!='/' )
-			q = ::CharNext(q);
-
-		if( p+2 <= q )
-		{
-			const char* r;
-			for( r=p; r!=q; ++r )
-				if( *r != '.' )
-					break;
-			if( r == q ) // all dot
-				return true;
-		}
-		p = (*q ? ::CharNext(q) : q);
-	}
-	return false;
-}
-
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// �����A�[�J�C�oDLL���C�����w ver2�B���ł�exe���K���ɓ���
+// Archiver module layer. Also handles exe-based archivers.
 
 class CArcModule
 {
 public:
 
-	// ���s�R�}���h�����w�肵�č쐬
-	//  �E�t�@�C�����Ƃ��ĒT���Č�����Ȃ������ꍇ
-	//    �V�F���̓����R�}���h�Ɖ��肵�Ĉꉞ�ێ����Ă���
-	//  �E�g���q�� exe �� com �Ȃ���s�t�@�C���Ƃ��Ĉ����B
-	//  �E����ȊO�Ȃ�A�[�J�C�oDLL�Ƃ��Ĉ����B
+		// Create by specifying the command name to execute.
+		//  - If found as a file, treat it as an executable.
+		//  - Otherwise assume it is a shell command and keep it as-is.
 	CArcModule( const char* name, bool us=false );
 	virtual ~CArcModule() {}
 	bool exist();
-	bool isdll() { return false; }
 	bool chk( const char* ) { return false; }
 
 	kiStr name() const { return kiPath::name(m_name); }
@@ -270,7 +239,6 @@ public:
 private:
 	enum { NOTEXIST, EXE, EXEUS, SHLCMD=0 } m_type;
 	char         m_name[MAX_PATH];
-	const char*  m_wild;
 };
 
 inline bool CArcModule::exist()

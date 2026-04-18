@@ -4,7 +4,7 @@
 #include "resource.h"
 #include "NoahApp.h"
 
-//----------------- ArcB2e�N���X�S�̓I�ȏ��� ------------------------------
+//----------------- ArcB2e class general processing ------------------------------
 
 char CArcB2e::st_base[MAX_PATH];
 int  CArcB2e::st_life=0;
@@ -32,7 +32,7 @@ CArcB2e::~CArcB2e()
 	delete [] m_ScriptBuf;
 }
 
-//------------------- �X�N���v�g���ɂ��܂�֌W���Ȃ����� -------------------------
+//------------------- Parts mostly independent of the script -------------------------
 
 bool CArcB2e::v_ver( kiStr& str )
 {
@@ -60,7 +60,7 @@ int CArcB2e::v_contents( const kiPath& aname, kiPath& dname )
 	return exe ? exe->cnt( aname, dname ) : aUnknown;
 }
 
-//------------------- �X�N���v�g��ǂݍ��݁�eval( load: ) -------------------
+//------------------- Load script & eval( load: ) -------------------
 
 bool CArcB2e::load_module( const char* name )
 {
@@ -70,18 +70,18 @@ bool CArcB2e::load_module( const char* name )
 
 int CArcB2e::v_load()
 {
-	//-- �g���X�N���v�g�t�@�C�����J��
+	//-- Open extended script file
 	kiStr fname( st_base ); fname += mlt_ext();
 	kiFile fp;
 	if( fp.open( fname ) )
 	{
-		//-- �t�@�C���S�̂�ǂݍ���
+		//-- Read entire file
 		unsigned int ln=fp.getSize();
 		m_ScriptBuf = new char[ ln+1 ];
 		ln = fp.read( (unsigned char*)m_ScriptBuf, ln );
 		m_ScriptBuf[ ln ] = '\0';
 
-		//-- section���ɐ؂蕪����
+		//-- Split into sections
 		bool pack1,chk=false;
 		for( char* p=m_ScriptBuf; *p; p++ )
 		{
@@ -113,21 +113,21 @@ int CArcB2e::v_load()
 				break;
 		}
 
-		//-- [load:]�����s�I
+		//-- Execute [load:]!
 		if( m_LoadScr )
 		{
-			//-- RythpVM �N��
+			//-- Start RythpVM
 			if( !rvm )
 				rvm = new CB2eCore;
 
-			//-- ������
+			//-- Initialize
 			m_Result=0;
 			rvm->setPtr( this,mLod );
 
-			//-- ���s
+			//-- Execute
 			rvm->eval( m_LoadScr );
 
-			//-- ����
+			//-- Result
 			if( m_Result==0 )
 				return (m_DecScr?aMelt|(m_DcEScr?aList|aMeltEach:0)|(chk?aCheck:0):0)
 					 | (m_EncScr?aCompress|(pack1?0:aArchive)|(m_SfxScr?aSfx:0):0);
@@ -138,11 +138,11 @@ int CArcB2e::v_load()
 
 int CArcB2e::exec_script( const char* scr, scr_mode mode )
 {
-	//-- ������
+	//-- Initialize
 	m_Result = 0;
 	rvm->setPtr( this, mode );
 
-	//-- ���s
+	//-- Execute
 	char* script = new char[ki_strlen(scr)+8];
 	ki_strcpy( script, "(exec " );
 	ki_strcat( script, scr );
@@ -150,58 +150,58 @@ int CArcB2e::exec_script( const char* scr, scr_mode mode )
 	rvm->eval( script );
 	delete [] script;
 
-	//-- ����
+	//-- Result
 	return m_Result;
 }
 
-//-------------------- ���X�g�A�b�v eval( list: ) -----------------------
+//-------------------- List eval( list: ) -----------------------
 
 bool CArcB2e::v_list( const arcname& aname, aflArray& files )
 {
-	//-- �X�N���v�g�����ŉ��Ƃ��ł���Ȃ炷��B
+	//-- Do without script if possible.
 	if( !exe )
 		return false;
 	else if( !m_LstScr )
 		return false;
 
-//-- ���X�e�B���O�X�N���v�g�ɕK�v�ȃf�[�^
+//-- Data required for the listing script
 
-	// ���ɖ�
+	// Archive name
 	m_psArc = &aname;
-	// �t�@�C�����X�g
+	// File list
 	m_psAInfo = &files;
 
-//-- ���s�I ---------------------
+//-- Execute! ---------------------
 
 	return 0==exec_script( m_LstScr, mLst );
 }
 
-//-------------------- �W�J���� eval( decode: ) -----------------------
+//-------------------- Extraction processing eval( decode: ) -----------------------
 
 int CArcB2e::v_melt( const arcname& aname, const kiPath& ddir, const aflArray* files )
 {
-//-- �𓀃X�N���v�g�ɕK�v�ȃf�[�^
+//-- Data required for extraction script
 
-	// �J�����g
+	// Set current directory
 	::SetCurrentDirectory( ddir );
-	// ���ɖ�
+	// Archive name
 	m_psArc = &aname;
-	// �o�͐�f�B���N�g��
+	// Output directory
 	m_psDir = &ddir;
-	// �t�@�C�����X�g
+	// File list
 	m_psAInfo = files;
 
-//-- ���s�I ---------------------
+//-- Execute! ---------------------
 
 	return exec_script( files ? m_DcEScr : m_DecScr,
 						files ? mDc1     : mDec );
 }
 
-//-------------------- ���k���� eval( encode: sfx: ) -----------------------
+//-------------------- Compression processing eval( encode: sfx: ) -----------------------
 
 int CArcB2e::cmpr( const char* scr, const kiPath& base, const wfdArray& files, const kiPath& ddir, const int method )
 {
-//-- ���k�X�N���v�g�ɕK�v�ȃf�[�^
+//-- Data required for the compression script
 
 	arcname aname(
 		ddir,
@@ -209,25 +209,25 @@ int CArcB2e::cmpr( const char* scr, const kiPath& base, const wfdArray& files, c
 		files[0].cFileName );
 	int mhd=method+1;
 
-	// �J�����g
+	// Set current directory
 	::SetCurrentDirectory( base );
-	// ���ɖ�
+	// Archive name
 	m_psArc = &aname;
-	// �x�[�X�f�B���N�g��
+	// Base directory
 	m_psDir = &base;
-	// ���\�b�h
+	// Method
 	m_psMhd = &mhd;
-	// ���X�g
+	// List
 	m_psList = &files;
 
-//-- ���s�I --------------------
+//-- Execute! --------------------
 
 	return exec_script( scr, mEnc );
 }
 
 bool CArcB2e::arc2sfx( const kiPath& temp, const kiPath& dest )
 {
-//-- SFX�ϊ��X�N���v�g�ɕK�v�ȃf�[�^
+//-- Data required for the SFX conversion script
 
 	kiFindFile f;
 	WIN32_FIND_DATA fd;
@@ -238,25 +238,25 @@ bool CArcB2e::arc2sfx( const kiPath& temp, const kiPath& dest )
 	kiPath from, to, oldname( fd.cFileName );
 	arcname aname( temp, fd.cAlternateFileName[0] ? fd.cAlternateFileName : fd.cFileName, fd.cFileName );
 
-	// �J�����g
+	// Set current directory
 	::SetCurrentDirectory( temp );
-	// ���ɖ�
+	// Archive name
 	m_psArc = &aname;
-	// �f�B���N�g��
+	// Directory
 	m_psDir = &temp;
 
-//-- ���s�I ----------------------
+//-- Execute! ----------------------
 
 	if( 0x8000<=exec_script( m_SfxScr, mSfx ) )
 		return false;
 
-//-- �R�s�[ ----------------------
+//-- Copy ----------------------
 
 	bool skipped=false, ans=false;
 	f.begin( wild );
 	while( f.next( &fd ) )
 	{
-		if( !skipped && oldname == fd.cFileName ) // �e���|�������ɂ̓R�s�[���Ȃ��B
+		if( !skipped && oldname == fd.cFileName ) // Don't copy the temp archive.
 		{
 			skipped=true;
 			continue;
@@ -282,32 +282,32 @@ int CArcB2e::v_compress( const kiPath& base, const wfdArray& files, const kiPath
 			kiPath tmp;
 			myapp().get_tempdir( tmp );
 
-			// �e���|�����ֈ��k
+			// Compress to temp
 			int ans = cmpr( m_EncScr, base, files, tmp, method );
 			if( ans < 0x8000 )
-				// �e���|�����ɗ����Ă�t�@�C����SFX�ɕϊ����R�s�[�I
+				// Convert temp files to SFX & copy!
 				ans = (arc2sfx( tmp, ddir ) ? 0 : 0x8020);
 
-			// �J�����g��߂��Ă����Ȃ��ƍ폜�ł��Ȃ��c(;_;)
+			// Cannot delete without restoring current directory...(;_;)
 			::SetCurrentDirectory( base );
 			tmp.remove();
 			return ans;
 		}
 	}
 
-	// �o�͐�֕��ʂɈ��k
+	// Compress normally to destination
 	return cmpr( theScript, base, files, ddir, method );
 }
 
 //-----------------------------------------------------------------//
-//-------------------- RythpVM�̕��̎��� --------------------------//
+//-------------------- RythpVM implementation --------------------------//
 //-----------------------------------------------------------------//
 
 bool CArcB2e::CB2eCore::exec_function( const kiVar& name, const CharArray& a, const BoolArray& b, int c, kiVar* r )
 {
 	bool processed = false;
 
-	if( m_mode==mLod ){ //**���[�h����pfunctions****************************
+	if( m_mode==mLod ){ //**Load-time-only functions****************************
 		if( name=="name" ){
 			processed=true;
 
@@ -359,7 +359,7 @@ bool CArcB2e::CB2eCore::exec_function( const kiVar& name, const CharArray& a, co
 				x->m_subFile.add( t );
 			}
 		}
-	}else{//************ ���[�h���ɂ͎g���Ȃ�functions *********************
+	}else{//************ Functions not available at load time *********************
 		if( ki_memcmp( (const char*)name, "arc", 3 ) ){
 			processed=true;
 
@@ -584,12 +584,12 @@ void CArcB2e::CB2eCore::arc( const char* opt, const CharArray& a, const BoolArra
 	//-- (arc[+-].xxx [slfrd]) --//
 	//---------------------------//
 
-	// �f�t�H���g�I�v�V�����ݒ�
+	// Default option settings
 	const char* anm=x->m_psArc->lname;
 	enum{ full, nam, dir } part=full;
 	if( m_mode==mSfx )	part=nam; // sfx
 
-	// �w�肪����Ώ㏑
+	// Override if specified
 	if( c>=2 )
 	{
 		getarg( a[1],b[1],&t );
@@ -604,17 +604,17 @@ void CArcB2e::CB2eCore::arc( const char* opt, const CharArray& a, const BoolArra
 			}
 	}
 
-	// �f�B���N�g������
+	// Directory part
 	*r = (part==nam ? (const char*)"" : x->m_psArc->basedir);
 
-	// ���O����
+	// Name part
 	if( part != dir )
 	{
 		if( *opt=='\0' || *opt=='+' )
 		{
-			// (arc)       : anm�����̂܂ܕԂ�
+			// (arc)       : return anm as-is
 			*r += anm;
-			// (arc+XXX)   : anmXXX��Ԃ�
+			// (arc+XXX)   : return anmXXX
 			if( *opt=='+' )
 				*r += (opt+1);
 		}
@@ -624,14 +624,14 @@ void CArcB2e::CB2eCore::arc( const char* opt, const CharArray& a, const BoolArra
 			const char* add = "";
 			if( opt[0]=='-' && opt[1]=='.' )
 			{
-				// (arc-.XXX) : ������.XXX��������폜�B
-				//            : �����łȂ���Ό���.decompressed
+				// (arc-.XXX) : remove trailing .XXX if present.
+				//            : otherwise append .decompressed
 				if( 0!=ki_strcmpi( ext, opt+2 ) )
 					ext = anm + ki_strlen(anm), add = ".decompressed";
 			}
 			else if( opt[1]!='\0' )
 			{
-				// (arc.XXX)  : �Ō�̊g���q��.XXX�Ɏ��ւ�
+				// (arc.XXX)  : replace last extension with .XXX
 				add = opt;
 				switch(mycnf().extnum())
 				{
@@ -642,7 +642,7 @@ void CArcB2e::CB2eCore::arc( const char* opt, const CharArray& a, const BoolArra
 			}
 			else
 			{
-				// (arc.)     : �g���q��S�Ď�菜��
+				// (arc.)     : remove all extensions
 				switch(mycnf().extnum())
 				{
 				case 0: ext = anm + ::lstrlen(anm);break; 
@@ -660,7 +660,7 @@ void CArcB2e::CB2eCore::arc( const char* opt, const CharArray& a, const BoolArra
 			*r += add;
 		}
 
-		// �K�v�Ȃ炭����
+		// Quote if necessary
 		if( part==full )
 			r->quote();
 	}
@@ -704,26 +704,26 @@ void CArcB2e::CB2eCore::list( const char* opt, const CharArray& a, const BoolArr
 	//-- (list[r|\*.*] [slfn]) --//
 	//---------------------------//
 
-	if( m_mode!=mEnc ) // �𓀂̏ꍇ
+	if( m_mode!=mEnc ) // For extraction
 	{
 		*r = "";
 
 		for( unsigned int i=0; i!=x->m_psAInfo->len(); i++ )
 			if( (*x->m_psAInfo)[i].selected )
 			{
-				// - �Ŏn�܂郄�c�΍�����邩�H
+				// Handle args starting with '-'?
 				t = (*x->m_psAInfo)[i].inf.szFileName;
 				t.quote();
 				*r += t;
 				*r += ' ';
 			}
 	}
-	else // ���k�̏ꍇ
+	else // For compression
 	{
-		// �f�t�H���g�I�v�V�����ݒ�
+		// Default option settings
 		bool lfn=true;
 		enum{ full, nam } part=nam;
-		// �w�肪����Ώ㏑
+		// Override if specified
 		if( c>=2 )
 		{
 			getarg( a[1],b[1],&t );
@@ -736,25 +736,25 @@ void CArcB2e::CB2eCore::list( const char* opt, const CharArray& a, const BoolArr
 				case 'n': part=nam;  break;
 				}
 		}
-		// ���O�ōċA���X�g�A�b�v���s�����ۂ�
+		// Whether to do recursive listing ourselves
 		bool selfrecurse = (*opt=='r');
 
-		// �f�B���N�g�����̌��ɕt���������́B
+		// Suffix to append after directory name.
 		if( *opt=='\\' || *opt=='/' )
 			opt++;
 
-		// ���X�g�A�b�v
+		// List up
 		kiVar t2,t3;
 		*r = "";
 		for( unsigned int i=0; i!=x->m_psList->len(); i++ )
 		{
-			// �t�@�C��������
+			// Filename part
 			t = ( part==full ? *x->m_psDir : (const char*)"");
 			t += lfn ? (*x->m_psList)[i].cFileName : (*x->m_psList)[i].cAlternateFileName;
 
 			if( selfrecurse && ((*x->m_psList)[i].dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
 			{
-				// �Z���t�ċA
+				// Self recursion
 				t2 = t;
 				t  = "";
 				t3 = *x->m_psDir;
@@ -763,7 +763,7 @@ void CArcB2e::CB2eCore::list( const char* opt, const CharArray& a, const BoolArr
 			}
 			else
 			{
-				// �m�[�}������
+				// Normal processing
 				if( *opt && ((*x->m_psList)[i].dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
 					t += '\\', t += opt;
 				if( lfn )
@@ -783,16 +783,16 @@ void CArcB2e::CB2eCore::resp( bool needq, const char* opt, const CharArray& a, c
 	//-- (resp[@|-o] (list) ...) --//
 	//-----------------------------//
 
-	// ���X�|���X�t�@�C�����쐬
+	// Create response file name
 	kiPath rspfile;
 	myapp().get_tempdir(rspfile);
 	rspfile += "filelist";
 
-	// �I�v�V�����ƌ������ĕԂ�
+	// Combine with options and return
 	*r  = opt;
 	*r += rspfile;
 
-	// �t�@�C���֏�������
+	// Write to file
 	kiFile fp;
 	if( !fp.open( rspfile,false ) )
 		return;
@@ -800,24 +800,24 @@ void CArcB2e::CB2eCore::resp( bool needq, const char* opt, const CharArray& a, c
 	kiVar tmp;
 	for( int i=1; i<c; i++ )
 	{
-		// fp�֊e������split���Ȃ��珑������
+		// Write each argument split-by-split to fp
 		getarg( a[i],b[i],&tmp );
 
 		for( const char *s,*p=tmp; *p; p++ )
 		{
-			// �]���ȋ󔒂̓X�L�b�v
+			// Skip extra whitespace
 			while( *p==' ' )
 				p++;
 			if( *p=='\0' )
 				break;
 
-			// �����̏I���ցc
+			// Move toward end of argument...
 			s=p;
 			for( int q=0; *p!='\0' && (*p!=' ' || (q&1)!=0); p++ )
 				if( *p=='"' )
 					q++;
 
-			// "�̂��܍��킹�ꍆ
+			// Quote balancing fix #1
 			if( !needq && *s=='"' )
 			{
 				s++;
@@ -825,10 +825,10 @@ void CArcB2e::CB2eCore::resp( bool needq, const char* opt, const CharArray& a, c
 					p--;
 			}
 
-			fp.write( s, p-s );
+			fp.write( s, static_cast<unsigned long>(p-s) );
 			fp.write( "\r\n", 2 );
 
-			// "�̂��܍��킹��
+			// Quote balancing fix #2
 			if( *p=='"' )
 				p++;
 			if( *p=='\0' )
@@ -871,4 +871,3 @@ void CArcB2e::CB2eCore::input( const char* msg, const char* defval, kiVar* r )
 	CB2eInputDlg d( msg, defval, r );
 	d.doModal( app()->mainhwnd() );
 }
-

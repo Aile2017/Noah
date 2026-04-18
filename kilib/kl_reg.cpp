@@ -5,7 +5,7 @@
 #include "kilib.h"
 
 
-//---------------------------- openån ----------------------------//
+//---------------------------- open functions ----------------------------//
 
 
 bool kiRegKey::open( HKEY parent, LPCTSTR keyname, REGSAM access )
@@ -22,7 +22,7 @@ bool kiRegKey::create( HKEY parent, LPCTSTR keyname, REGSAM access )
 }
 
 
-//------------------------- query/setån ----------------------------//
+//------------------------- query/set functions ----------------------------//
 
 
 bool kiRegKey::get( LPCTSTR valname, DWORD* val )
@@ -70,7 +70,7 @@ bool kiRegKey::set( LPCTSTR valname, LPCTSTR val )
 }
 
 
-//--------------------------- deleteån ----------------------------//
+//--------------------------- delete functions ----------------------------//
 
 
 bool kiRegKey::del( LPCTSTR valname )
@@ -110,7 +110,7 @@ bool kiRegKey::delSubKeyRecursive( HKEY k, LPCTSTR n )
 	return ans;
 }
 
-//--------------------------- ini:èâä˙âª ----------------------------//
+//--------------------------- ini: initialize ----------------------------//
 
 
 void kiIniFile::setFileName( const char* ini, bool exepath )
@@ -126,7 +126,7 @@ void kiIniFile::setFileName( const char* ini, bool exepath )
 }
 
 
-//--------------------------- ini:readån ----------------------------//
+//--------------------------- ini: read functions ----------------------------//
 
 
 int kiIniFile::getInt( const char* key, int defval )
@@ -148,7 +148,7 @@ const char* kiIniFile::getStr( const char* key, const char* defval )
 }
 
 
-//--------------------------- ini:writeån ----------------------------//
+//--------------------------- ini: write functions ----------------------------//
 
 
 bool kiIniFile::putStr( const char* key, const char* val )

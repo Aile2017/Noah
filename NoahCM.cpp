@@ -7,13 +7,15 @@
 #include "NoahCM.h"
 
 //----------------------------------------------//
-//---------- INI�t�@�C�����̐ݒ�Ȃ� -----------//
+//------------- INI file setup etc. ------------//
 //----------------------------------------------//
 
 void CNoahConfigManager::init()
 {
+	//-- Clear the settings-loaded flag
 	m_Loaded = 0;
 
+	//-- Set INI file name
 	char usr[256];
 	DWORD siz=sizeof(usr);
 	if( !::GetUserName( usr, &siz ) )
@@ -21,27 +23,26 @@ void CNoahConfigManager::init()
 	m_Ini.setFileName( "Noah.ini" );
 	m_Ini.setSection( usr );
 
+	//-- Pre-load all extraction settings
 	load( Melt );
 }
 
-typedef bool (WINAPI * XT_IA)();
-typedef void (WINAPI * XT_LS)(bool*,bool*);
-typedef void (WINAPI * XT_SS)(bool,bool);
-typedef void (WINAPI * XT_AS)(bool*);
-typedef void (WINAPI * XT_LSEX)(const char*,bool*);
-typedef void (WINAPI * XT_SSEX)(const char*,bool);
+//----------------------------------------------//
+//------------- Settings load & save -----------//
+//----------------------------------------------//
 
 void CNoahConfigManager::load( loading_flag what )
 {
-	if( (what & Mode) && !(m_Loaded & Mode) )
+	if( (what & Mode) && !(m_Loaded & Mode) ) //----------- Mode
 	{
 		m_Mode     = m_Ini.getInt( "Mode", 2 ) & 3;
 		m_MiniBoot = m_Ini.getBool( "MiniBoot", false );
 		m_OneExt   = m_Ini.getBool( "OneExt", false );
 		m_ZeroExt  = m_Ini.getBool( "NoExt", false );
 		m_MbLim    = max( 1, m_Ini.getInt( "MultiBootLimit", 4 ) );
+		m_OldVer   = m_Ini.getBool( "OldAbout", false );
 	}
-	if( (what & Melt) && !(m_Loaded & Melt) )
+	if( (what & Melt) && !(m_Loaded & Melt) ) //----------- Extraction
 	{
 		const char* x = m_Ini.getStr( "MDir", kiPath( kiPath::Dsk ) );
 		m_MDirSm = (*x=='@');
@@ -49,8 +50,9 @@ void CNoahConfigManager::load( loading_flag what )
 		const int m = m_Ini.getInt( "MkDir", 2 );
 		m_MNoNum = ( m>=16 );
 		m_MkDir  = ( m&3 );
+		m_Kill   = m_Ini.getStr( "Kill", "" );
 	}
-	if( (what & Compress) && !(m_Loaded & Compress) )
+	if( (what & Compress) && !(m_Loaded & Compress) ) //--- Compression
 	{
 		const char* x = m_Ini.getStr( "CDir", kiPath( kiPath::Dsk ) );
 		m_CDirSm = (*x=='@');
@@ -58,26 +60,7 @@ void CNoahConfigManager::load( loading_flag what )
 		m_CExt = m_Ini.getStr( "CExt", "zip" );
 		m_CMhd = m_Ini.getStr( "CMhd", "7-zip" );
 	}
-	if( (what & Shell) && !(m_Loaded & Shell) )
-	{
-		m_OldVer = m_Ini.getBool( "OldAbout", false );
-
-		kiPath SndLink(kiPath::Snd),DskLink(kiPath::Dsk);
-		SndLink += "Noah.lnk", DskLink += "Noah.lnk";
-		m_SCSendTo = kiSUtil::exist(SndLink);
-		m_SCDesktop= kiSUtil::exist(DskLink);
-
-		m_bShlOK = NOSHL;
-		m_hNoahXtDLL = kiSUtil::loadLibrary( "NoahXt" );
-		if( m_hNoahXtDLL )
-		{
-			XT_IA Init = (XT_IA)getProc( "Init" );
-			m_bShlOK = ( Init() ? SHLOK : NOADMIN );
-			XT_LS LoadSE = (XT_LS)getProc( "LoadSE" );
-			LoadSE( &m_SECmp, &m_SEExt );
-		}
-	}
-	if( (what & OpenDir) && !(m_Loaded & OpenDir) )
+	if( (what & OpenDir) && !(m_Loaded & OpenDir) ) //------ Folder open
 	{
 		m_MODir = m_Ini.getBool( "MODir", true );
 		m_CODir = m_Ini.getBool( "CODir", true );
@@ -91,43 +74,18 @@ void CNoahConfigManager::save()
 {
 	kiStr tmp;
 
-	//-- ���[�h
+	//-- Mode
 	m_Ini.putInt( "Mode", m_Mode );
-	//-- ��
+	//-- Extraction
 	tmp = m_MDirSm ? "@" : "", tmp+= m_MDir;
 	m_Ini.putStr( "MDir", tmp );
 	m_Ini.putInt( "MkDir", m_MkDir+(m_MNoNum?16:0) );
-	//-- ���k
+	//-- Compression
 	tmp = m_CDirSm ? "@" : "", tmp+= m_CDir;
 	m_Ini.putStr( "CDir", tmp );
 	m_Ini.putStr( "CExt", m_CExt );
 	m_Ini.putStr( "CMhd", m_CMhd );
-	//-- �V���[�g�J�b�g
-	kiPath SndLink(kiPath::Snd); SndLink += "Noah.lnk";
-	kiPath DskLink(kiPath::Dsk); DskLink += "Noah.lnk";
-	if( m_SCSendTo )
-	{
-		if( !kiSUtil::exist(SndLink) )
-			kiSUtil::createShortCut( kiPath(kiPath::Snd), "Noah" );
-	}
-	else
-		::DeleteFile(SndLink);
-	if( m_SCDesktop )
-	{
-		if( !kiSUtil::exist(DskLink) )
-			kiSUtil::createShortCut( kiPath(kiPath::Dsk), "Noah" );
-	}
-	else
-		::DeleteFile(DskLink);
-	//-- �֘A�Â��E�V�F���G�N�X�e���V����
-	if( m_bShlOK )
-	{
-		XT_SS SaveSE = (XT_SS)getProc( "SaveSE" );
-		XT_AS SaveAssoc = (XT_AS)getProc( "SaveAS" );
-		XT_SSEX SaveASEx = (XT_SSEX)getProc( "SaveASEx" );
-		SaveSE( m_SECmp, m_SEExt );
-	}
-	//-- �t�H���_�I�[�v��
+	//-- Folder open
 	m_Ini.putBool("MODir", m_MODir );
 	m_Ini.putBool("CODir", m_CODir );
 }
@@ -143,67 +101,45 @@ void CNoahConfigManager::dialog()
 		kiWindow::msgLoop();
 }
 
-FARPROC CNoahConfigManager::getProc( const char* name )
-{
-	return ::GetProcAddress( m_hNoahXtDLL, name );
-}
-
 //----------------------------------------------//
-//--------------- �_�C�A���O�֌W ---------------//
+//--------------- Dialog related ---------------//
 //----------------------------------------------//
 
-///////// ������ /////////////
+///////// Initialize /////////////
 
-#define IDI_LZH 101
-#define IDI_ZIP 102
-#define IDI_CAB 103
-#define IDI_RAR 104
-#define IDI_TAR 105
-#define IDI_YZ1 106
-#define IDI_GCA 107
-#define IDI_ARJ 108
-#define IDI_BGA 109
-#define IDI_ACE 110
-#define IDI_OTH 111
-#define IDI_JAK 112
-
-#define icon_is(_x) { if( mycnf().m_hNoahXtDLL ) setIcon( ::LoadIcon( mycnf().m_hNoahXtDLL, MAKEINTRESOURCE(_x) ) ); }
-	CNoahConfigDialog::CCmprPage::CCmprPage() : kiPropSheetPage( IDD_CMPCFG ) icon_is( IDI_ACE )
-	CNoahConfigDialog::CMeltPage::CMeltPage() : kiPropSheetPage( IDD_MLTCFG ) icon_is( IDI_LZH )
-	CNoahConfigDialog::CWinXPage::CWinXPage() : kiPropSheetPage( IDD_WINCFG ) icon_is( IDI_YZ1 )
-	CNoahConfigDialog::CInfoPage::CInfoPage() : kiPropSheetPage( IDD_INFCFG ) icon_is( IDI_GCA )
-#undef icon_is
+	CNoahConfigDialog::CCmprPage::CCmprPage() : kiPropSheetPage( IDD_CMPCFG ) {}
+	CNoahConfigDialog::CMeltPage::CMeltPage() : kiPropSheetPage( IDD_MLTCFG ) {}
+	CNoahConfigDialog::CInfoPage::CInfoPage() : kiPropSheetPage( IDD_INFCFG ) {}
 
 CNoahConfigDialog::CNoahConfigDialog()
 {
-	//-- [icon] Noah�̃v���p�e�B
+	//-- [icon] Noah properties
 	m_Header.dwFlags |= PSH_PROPTITLE | PSH_USEICONID;
 	m_Header.pszIcon = MAKEINTRESOURCE( IDI_MAIN );
 	m_Header.pszCaption = "Noah";
 
-	//-- �A�N�Z�����[�^���Z�b�g
+	//-- Set accelerator
 	loadAccel( IDR_ACCEL );
 
-	//-- �y�[�W���ǂ��ǂ��ƒǉ�
+	//-- Add pages
 	m_Pages.add( new CCmprPage );
 	m_Pages.add( new CMeltPage );
-	m_Pages.add( new CWinXPage );
 	m_Pages.add( new CInfoPage );
 }
 
 BOOL CNoahConfigDialog::onInit()
 {
-	//-- DnD ON, �O�ʂ�
+	//-- Enable DnD, bring to front
 	::DragAcceptFiles( hwnd(), TRUE );
 	setFront( hwnd() );
 	return FALSE;
 }
 
-///////// �e��R�}���h /////////////
+///////// Commands /////////////
 
 void CNoahConfigDialog::onCommand( UINT id )
 {
-	//-- �A�N�Z�����[�^�g���b�v
+	//-- Trap accelerator
 	if( id == IDA_HELP )		onHelp();
 	else if( id == IDA_MYDIR )	myapp().open_folder( kiPath( kiPath::Exe ) );
 }
@@ -212,13 +148,13 @@ void CNoahConfigDialog::onHelp()
 {
 	kiPath exepos( kiPath::Exe );
 
-	//-- exe�Ɠ����ӏ��ɂ���manual.htm���N��
+	//-- Open manual.htm from the same directory as the exe
 	kiPath hlp(exepos); hlp+="manual.htm";
 	if( kiSUtil::exist(hlp) )
 		::ShellExecute( hwnd(), NULL, hlp, NULL, NULL, SW_MAXIMIZE );
 	else
 	{
-		//-- �������readme.txt��
+		//-- Fall back to readme.txt
 		hlp=exepos; hlp+="readme.txt";
 		if( kiSUtil::exist(hlp) )
 			::ShellExecute( hwnd(), NULL, hlp, NULL, NULL, SW_SHOWDEFAULT );
@@ -227,18 +163,19 @@ void CNoahConfigDialog::onHelp()
 
 void CNoahConfigDialog::onDrop( HDROP hdrop )
 {
-	//-- �_�C�A���O�ւ̃h���b�O���h���b�v
+	//-- Drag & drop onto the dialog: commit settings first
 	sendOK2All();
 
-	//-- �r���Ŏז��ɂȂ�Ȃ��悤�ɁA������
+	//-- Hide while processing
 	::ShowWindow( hwnd(), SW_HIDE );
 
 	char str[MAX_PATH];
 	StrArray reallist;
 	cCharArray dummy;
 
+	unsigned int i;
 	unsigned long max = ::DragQueryFile( hdrop, 0xffffffff, NULL, 0 );
-	for( unsigned int i=0; i!=max; i++ )
+	for( i=0; i!=max; i++ )
 	{
 		::DragQueryFile( hdrop, i, str, MAX_PATH );
 		reallist.add( kiStr(str) );
@@ -247,12 +184,12 @@ void CNoahConfigDialog::onDrop( HDROP hdrop )
 		dummy.add( (const char*)reallist[i] );
 	myapp().do_files( dummy, NULL );
 
-	// ���A
+	//-- Restore
 	::DragFinish( hdrop );
 	::ShowWindow( hwnd(), SW_SHOW );
 }
 
-///////// �I���������Ȃ� /////////////
+///////// Exit processing /////////////
 
 void CNoahConfigDialog::shift_and_button()
 {
@@ -285,7 +222,7 @@ bool CNoahConfigDialog::onCancel()
 	return true;
 }
 
-///////// ���k�ݒ�E�𓀐ݒ�̋��ʕ��� /////////////
+///////// Shared code for compression/extraction settings /////////////
 
 static void dirinit( kiDialog* dlg, bool same, bool open, const char* dir )
 {
@@ -315,23 +252,23 @@ static bool dirdlg( kiDialog* dlg, UINT msg, WPARAM wp )
 	return false;
 }
 
-///////// ���k�ݒ� /////////////
+///////// Compression settings /////////////
 
 BOOL CNoahConfigDialog::CCmprPage::onInit()
 {
-	// ���k��t�H���_
+	// Compression destination folder
 	dirinit( this, mycnf().cdirsm(), mycnf().codir(), mycnf().cdir() );
 
-	// ���샂�[�h
+	// Operation mode
 	sendMsgToItem( IDC_MODE1 + mycnf().mode(), BM_SETCHECK, TRUE );
 
-	// ���k�`��
+	// Compression format
 	correct( mycnf().cext(), true );
-	int ind=sendMsgToItem( IDC_CMPMHD, CB_FINDSTRINGEXACT, -1, (LPARAM)(const char*)mycnf().cmhd() );
+	int ind = static_cast<int>(sendMsgToItem( IDC_CMPMHD, CB_FINDSTRINGEXACT, -1, (LPARAM)(const char*)mycnf().cmhd() ));
 	if( ind!=CB_ERR )
 		sendMsgToItem( IDC_CMPMHD, CB_SETCURSEL, ind );
 
-	// �c�[���`�b�v
+	// Tooltip
 	m_tooltip = ::CreateWindowEx(
 		0, TOOLTIPS_CLASS, NULL, TTS_ALWAYSTIP,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -344,15 +281,15 @@ BOOL CNoahConfigDialog::CCmprPage::onInit()
 
 bool CNoahConfigDialog::CCmprPage::onOK()
 {
-	// ���k��t�H���_
+	// Compression destination folder
 	dirok( this, mycnf().m_CDirSm, mycnf().m_CODir, mycnf().m_CDir );
 
-	// ���샂�[�h
+	// Operation mode
 	for( int i=0; i!=4; i++ )
 		if( BST_CHECKED==sendMsgToItem( IDC_MODE1 + i, BM_GETCHECK ) )
 			{ mycnf().m_Mode = i; break; }
 
-	// ���k�`��
+	// Compression format
 	char str[200]="";
 	sendMsgToItem( IDC_CMPEXT, CB_GETLBTEXT, sendMsgToItem( IDC_CMPEXT, CB_GETCURSEL ), (LPARAM)str );
 	if( *str )
@@ -362,13 +299,13 @@ bool CNoahConfigDialog::CCmprPage::onOK()
 		mycnf().m_CMhd = str;
 	}
 
-	onCancel(); // �I������
+	onCancel(); // cleanup
 	return true;
 }
 
 bool CNoahConfigDialog::CCmprPage::onCancel()
 {
-	// �I������
+	// cleanup
 	::DestroyWindow( m_tooltip );
 	return true;
 }
@@ -446,14 +383,14 @@ void CNoahConfigDialog::CCmprPage::correct( const char* ext, bool first )
 }
 
 
-///////// �𓀐ݒ� /////////////
+///////// Extraction settings /////////////
 
 BOOL CNoahConfigDialog::CMeltPage::onInit()
 {
-	// �𓀐�t�H���_
+	// Extraction destination folder
 	dirinit( this, mycnf().mdirsm(), mycnf().modir(), mycnf().mdir() );
 
-	// �t�H���_��������
+	// Auto folder creation
 	if( mycnf().mkdir()!=0 )
 		sendMsgToItem( IDC_MKDIR ,BM_SETCHECK, TRUE );
 	if( mycnf().mkdir()==1 )
@@ -469,10 +406,10 @@ BOOL CNoahConfigDialog::CMeltPage::onInit()
 
 bool CNoahConfigDialog::CMeltPage::onOK()
 {
-	// �𓀐�t�H���_
+	// Extraction destination folder
 	dirok( this, mycnf().m_MDirSm, mycnf().m_MODir, mycnf().m_MDir );
 
-	// �t�H���_��������
+	// Auto folder creation
 	mycnf().m_MNoNum = ( BST_CHECKED==sendMsgToItem( IDC_MKDIR3, BM_GETCHECK ) );
 	if( BST_CHECKED!=sendMsgToItem( IDC_MKDIR ,BM_GETCHECK ) )
 		mycnf().m_MkDir = 0;
@@ -514,174 +451,7 @@ void CNoahConfigDialog::CMeltPage::correct()
 		sendMsgToItem( IDC_MKDIR2, BM_SETCHECK, TRUE );
 }
 
-///////// Windows�g���ݒ� /////////////
-
-BOOL CNoahConfigDialog::CWinXPage::onInit()
-{
-	if( !mycnf().m_bShlOK )
-	{
-		::EnableWindow( item(IDC_CMP), FALSE );
-		::EnableWindow( item(IDC_MLT), FALSE );
-	}
-	else
-	{
-		if( mycnf().m_SECmp )
-			sendMsgToItem( IDC_CMP ,BM_SETCHECK, TRUE );
-		if( mycnf().m_SEExt )
-			sendMsgToItem( IDC_MLT ,BM_SETCHECK, TRUE );
-	}
-	if( mycnf().m_bShlOK!=1 )
-		::ShowWindow( item(IDC_NOADMIN), SW_HIDE );
-	if( mycnf().m_SCSendTo )
-		sendMsgToItem( IDC_SND, BM_SETCHECK, TRUE );
-	if( mycnf().m_SCDesktop )
-		sendMsgToItem( IDC_DSK, BM_SETCHECK, TRUE );
-
-	return FALSE;
-}
-
-bool CNoahConfigDialog::CWinXPage::onOK()
-{
-	mycnf().m_SCSendTo = ( BST_CHECKED==sendMsgToItem( IDC_SND ,BM_GETCHECK ) );
-	mycnf().m_SCDesktop= ( BST_CHECKED==sendMsgToItem( IDC_DSK ,BM_GETCHECK ) );
-	mycnf().m_SECmp = ( BST_CHECKED==sendMsgToItem( IDC_CMP ,BM_GETCHECK ) );
-	mycnf().m_SEExt = ( BST_CHECKED==sendMsgToItem( IDC_MLT ,BM_GETCHECK ) );
-
-	return true;
-}
-
-BOOL CALLBACK CNoahConfigDialog::CWinXPage::proc( UINT msg, WPARAM wp, LPARAM lp )
-{
-	return FALSE;
-}
-
-CNoahConfigDialog::CAssPage::CAssPage( HWND parent ) : kiDialog( IDD_ANYASS )
-{
-	doModal( parent );
-}
-
-BOOL CNoahConfigDialog::CAssPage::onInit()
-{
-	typedef void (WINAPI * XT_LAX)(const char*,bool*);
-	XT_LAX LoadASEx = (XT_LAX)mycnf().getProc( "LoadASEx" );
-	static const char* const ext_list[] =
-		{ "lzh","zip","cab","rar","tar","yz1","gca","arj","gza","ace","cpt","jak","7z" };
-
-	// b2e����
-	kiPath wild( kiPath::Exe );
-	wild += "b2e\\*.b2e";
-	kiFindFile find;
-	find.begin( wild );
-
-	char* first_dot;
-	bool state;
-	HWND lst[] = { item(IDC_NASSOC), item(IDC_ASSOC) };
-
-	for( WIN32_FIND_DATA fd; find.next(&fd); )
-	{
-		// # �t���͈��k��p
-		if( fd.cFileName[0] == '#' )
-			continue;
-
-		// �g���q��؂�o��
-		::CharLower( fd.cFileName );
-		first_dot = const_cast<char*>(kiPath::ext_all(fd.cFileName)-1);
-		*first_dot = '\0';
-
-		// ��{�`���Ȃ炱���ł͂˂�
-		for( int i=0; i<sizeof(ext_list)/sizeof(const char*); i++ )
-			if( 0==ki_strcmp( ext_list[i], fd.cFileName ) )
-				break;
-		if( i != sizeof(ext_list)/sizeof(const char*) )
-			continue;
-
-		// �֘A�Â��ς݂��ǂ����`�F�b�N
-		LoadASEx( fd.cFileName, &state );
-
-		// �K�؂ȕ��̃��X�g�֒ǉ�
-		*first_dot = '.';
-		*const_cast<char*>(kiPath::ext(fd.cFileName)-1) = '\0';
-		::SendMessage( lst[state?1:0], LB_SETITEMDATA,
-					   ::SendMessage( lst[state?1:0], LB_ADDSTRING, 0, (LPARAM)fd.cFileName ),
-					   state?1:0 );
-	}
-
-	return FALSE;
-}
-
-BOOL CALLBACK CNoahConfigDialog::CAssPage::proc( UINT msg, WPARAM wp, LPARAM lp )
-{
-	if( msg==WM_COMMAND )
-	{
-		char str[300];
-		DWORD dat;
-		HWND from=item(IDC_NASSOC), to=item(IDC_ASSOC);
-
-		switch( LOWORD(wp) )
-		{
-		case IDC_DEL:
-			from=item(IDC_ASSOC), to=item(IDC_NASSOC);
-		case IDC_ADD:{
-			int end = ::SendMessage( from, LB_GETCOUNT, 0, 0 );
-			for( int i=0; i<end; i++ )
-				if( ::SendMessage( from, LB_GETSEL, i, 0 ) )
-				{
-					// �擾
-					::SendMessage( from, LB_GETTEXT, i, (LPARAM)str );
-					dat = ::SendMessage( from, LB_GETITEMDATA, i, 0 );
-					//�@�R�s�[
-					::SendMessage( to, LB_SETITEMDATA,
-								   ::SendMessage( to, LB_ADDSTRING, 0, (LPARAM)str ),
-								   dat );
-					// �폜
-					::SendMessage( from, LB_DELETESTRING, i, 0 );
-					i--, end--;
-				}
-
-			}return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-static void crack_str( char* p )
-{
-	for( ; *p; p=kiStr::next(p) )
-		if( *p=='.' )
-			*p++ = '\0';
-	*++p = '\0';
-}
-
-bool CNoahConfigDialog::CAssPage::onOK()
-{
-	typedef void (WINAPI * XT_SAX)(const char*,bool);
-	XT_SAX SaveASEx = (XT_SAX)mycnf().getProc( "SaveASEx" );
-
-	char str[301];
-	int i, nc = sendMsgToItem( IDC_NASSOC, LB_GETCOUNT ),
-	       ac = sendMsgToItem(  IDC_ASSOC, LB_GETCOUNT );
-
-	// ����
-	for( i=0; i<nc; i++ )
-		if( sendMsgToItem( IDC_NASSOC, LB_GETITEMDATA, i ) )
-		{
-			sendMsgToItem( IDC_NASSOC, LB_GETTEXT, i, (LPARAM)str );
-			crack_str( str );
-			SaveASEx( str, false );
-		}
-	// �ݒ�
-	for( i=0; i<ac; i++ )
-		if( !sendMsgToItem( IDC_ASSOC, LB_GETITEMDATA, i ) )
-		{
-			sendMsgToItem(  IDC_ASSOC, LB_GETTEXT, i, (LPARAM)str );
-			crack_str( str );
-			SaveASEx( str, true );
-		}
-
-	return true;
-}
-
-///////// ���̑��ݒ� /////////////
+///////// Info page /////////////
 
 BOOL CNoahConfigDialog::CInfoPage::onInit()
 {

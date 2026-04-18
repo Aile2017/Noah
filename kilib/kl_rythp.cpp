@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "kilibext.h"
 
-//-------------------- Variant 型変数 --------------------------//
+//-------------------- Variant type variables --------------------------//
 
 int kiVar::getInt()
 {
@@ -23,7 +23,8 @@ kiVar& kiVar::quote()
 {
 	if( m_pBuf[0]=='\"' )
 		return *this;
-	for( const char* p=m_pBuf; *p; p=next(p) )
+	const char* p = m_pBuf;
+	for( ; *p; p=next(p) )
 		if( *p==' ' )
 			break;
 	if( !(*p) )
@@ -47,7 +48,8 @@ kiVar& kiVar::unquote()
 {
 	if( *m_pBuf!='\"' )
 		return *this;
-	for( const char *last=m_pBuf+1,*p=m_pBuf+1; *p; p=next(p) )
+	const char* last = m_pBuf+1;
+	for( const char* p=m_pBuf+1; *p; p=next(p) )
 		last=p;
 	if( *last!='\"' )
 		return *this;
@@ -57,7 +59,7 @@ kiVar& kiVar::unquote()
 	return *this;
 }
 
-//---------------------- 初期化・破棄 ----------------------------//
+//---------------------- Initialize & destroy ----------------------------//
 
 kiRythpVM::kiRythpVM()
 {
@@ -68,7 +70,7 @@ kiRythpVM::kiRythpVM()
 	ele['/'] = "\n";
 }
 
-//---------------------- パラメータ毎に分割 ----------------------//
+//---------------------- Split by parameter ----------------------//
 
 char* kiRythpVM::split_tonext( char* p )
 {
@@ -121,26 +123,26 @@ bool kiRythpVM::split( char* buf, kiArray<char*>& argv, kiArray<bool>& argb, int
 	return true;
 }
 
-//------------------------- 実行 -------------------------//
+//------------------------- Execute -------------------------//
 
 void kiRythpVM::eval( char* str, kiVar* ans )
 {
-	// 返値をクリアしておく
+	// Clear return value
 	kiVar tmp,*aaa=&tmp;
 	if(ans)
 		*ans="",aaa=ans;
 
-	// "function param1 param2 ..." 形式の文字列をパラメータに分割
+	// Split string in "function param1 param2 ..." format into parameters
 	kiArray<char*> av;
 	kiArray<bool> ab;
 	int ac;
 	if( split( str,av,ab,ac ) && ac )
 	{
-		// function名取得
+		// Get function name
 		kiVar name;
 		getarg( av[0],ab[0],&name );
 
-		// function実行！
+		// Execute function!
 		exec_function( name, av, ab, ac, aaa );
 	}
 }
@@ -150,7 +152,7 @@ void kiRythpVM::getarg( char* a, bool b, kiVar* arg )
 	kiVar t;
 	const char* p;
 
-	// (...) なら eval する。
+	// If (...), call eval.
 	if( b )
 	{
 		eval( a, &t ), *arg = t;
@@ -159,7 +161,7 @@ void kiRythpVM::getarg( char* a, bool b, kiVar* arg )
 	{
 		p = a;
 
-		// 変数置き換え
+		// Variable substitution
 		*arg="";
 		for( ; *p; *p && p++ )
 			if( *p!='%' )
@@ -173,7 +175,7 @@ void kiRythpVM::getarg( char* a, bool b, kiVar* arg )
 	}
 }
 
-//------------------------- Minimum-Rythp環境 -------------------------//
+//------------------------- Minimum-Rythp environment -------------------------//
 
 namespace {
 	static bool isIntStr( const char* str ) {
@@ -187,14 +189,14 @@ namespace {
 bool kiRythpVM::exec_function( const kiVar& name,
 		const kiArray<char*>& a, const kiArray<bool>& b,int c, kiVar* r )
 {
-//	Minimum-Rythp で利用できる function は以下の通り。
+//	The functions available in Minimum-Rythp are as follows.
 //		exec, while, if, let, +, -, *, /, =, !, between, mod, <, >
 
 	kiVar t;
 	int i,A,B,C;
 
 //----- ---- --- -- -  -   -
-//-- (exec 実行文 実行文 ...) returns last-result
+//-- (exec stmt stmt ...) returns last-result
 //----- ---- --- -- -  -   -
 	if( name=="exec" )
 	{
@@ -202,13 +204,13 @@ bool kiRythpVM::exec_function( const kiVar& name,
 			getarg( a[i],b[i],r );
 	}
 //----- ---- --- -- -  -   -
-//-- (while 条件 繰り返す内容) returns last-result
+//-- (while condition body) returns last-result
 //----- ---- --- -- -  -   -
 	else if( name=="while" )
 	{
 		if( c>=3 )
 		{
-			// (特殊処理)複数回呼ぶコードなのでコピらなきゃ駄目。
+			// (special) Must copy since this code is called multiple times.
 			int L1=ki_strlen(a[1]), L2=ki_strlen(a[2]);
 			char* tmp = new char[ 1 + (L1>L2 ? L1 : L2) ];
 			while( getarg( ki_strcpy(tmp,a[1]), b[1], &t ), t.getInt()!=0 )
@@ -217,7 +219,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (if 条件 真なら [偽なら]) returns executed-result
+//-- (if condition true-branch [false-branch]) returns executed-result
 //----- ---- --- -- -  -   -
 	else if( name=="if" )
 	{
@@ -230,7 +232,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (let 変数名 値 値 ...) returns new-value
+//-- (let variable-name value value ...) returns new-value
 //----- ---- --- -- -  -   -
 	else if( name=="let" )
 	{
@@ -243,7 +245,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (= 値A 値B) returns A==B ?
+//-- (= valueA valueB) returns A==B ?
 //----- ---- --- -- -  -   -
 	else if( name=="=" )
 	{
@@ -259,7 +261,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (between 値A 値B 値C) returns A <= B <= C ?
+//-- (between valueA valueB valueC) returns A <= B <= C ?
 //----- ---- --- -- -  -   -
 	else if( name=="between" )
 	{
@@ -272,7 +274,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (< 値A 値B) returns A < B ?
+//-- (< valueA valueB) returns A < B ?
 //----- ---- --- -- -  -   -
 	else if( name=="<" )
 	{
@@ -284,7 +286,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (> 値A 値B) returns A > B ?
+//-- (> valueA valueB) returns A > B ?
 //----- ---- --- -- -  -   -
 	else if( name==">" )
 	{
@@ -296,7 +298,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (! 値A [値B]) returns A!=B ? or !A
+//-- (! valueA [valueB]) returns A!=B ? or !A
 //----- ---- --- -- -  -   -
 	else if( name=="!" )
 	{
@@ -318,7 +320,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (+ 値A 値B) returns A+B
+//-- (+ valueA valueB) returns A+B
 //----- ---- --- -- -  -   -
 	else if( name=="+" )
 	{
@@ -328,7 +330,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		r->setInt(A);
 	}
 //----- ---- --- -- -  -   -
-//-- (- 値A 値B) returns A-B
+//-- (- valueA valueB) returns A-B
 //----- ---- --- -- -  -   -
 	else if( name=="-" )
 	{
@@ -347,7 +349,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 			r->setInt(0);
 	}
 //----- ---- --- -- -  -   -
-//-- (* 値A 値B) returns A*B
+//-- (* valueA valueB) returns A*B
 //----- ---- --- -- -  -   -
 	else if( name=="*" )
 	{
@@ -357,7 +359,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		r->setInt(A);
 	}
 //----- ---- --- -- -  -   -
-//-- (/ 値A 値B) returns A/B
+//-- (/ valueA valueB) returns A/B
 //----- ---- --- -- -  -   -
 	else if( name=="/" )
 	{
@@ -369,7 +371,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (mod 値A 値B) returns A%B
+//-- (mod valueA valueB) returns A%B
 //----- ---- --- -- -  -   -
 	else if( name=="mod" )
 	{
@@ -381,7 +383,7 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		}
 	}
 //----- ---- --- -- -  -   -
-//-- (slash 値A) returns A.replaceAll("\\", "/")
+//-- (slash valueA) returns A.replaceAll("\\", "/")
 //----- ---- --- -- -  -   -
 	else if( name=="slash" )
 	{
@@ -396,4 +398,3 @@ bool kiRythpVM::exec_function( const kiVar& name,
 		return false;
 	return true;
 }
-

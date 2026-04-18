@@ -5,7 +5,7 @@
 #include "kilib.h"
 
 
-//------------------------ 文字列のメモリ処理など -----------------------//
+//------------------------ String memory processing etc. -----------------------//
 
 
 kiCmdParser::kiCmdParser( char* cmd, bool ignoreFirst )
@@ -32,7 +32,7 @@ kiCmdParser::~kiCmdParser()
 }
 
 
-//---------------------------- 分割の処理 -----------------------------//
+//---------------------------- Splitting processing -----------------------------//
 
 
 void kiCmdParser::doit( char* start, bool ignoreFirst )
@@ -43,17 +43,17 @@ void kiCmdParser::doit( char* start, bool ignoreFirst )
 
 	while( *p!='\0' )
 	{
-		// 余分な空白はスキップ
+		// Skip extra whitespace
 		while( *p==' ' ) //|| *p=='\t' || *p=='\r' || *p=='\n' )
 			p++;
 
-		// " だったら、その旨記録してさらに一個進める
+		// If '"', record it and advance one more
 		if( *p=='"' )
 			endc='"', p++;
 		else
 			endc=' ';
 
-		// end-of-text なら終了
+		// If end-of-text, finish
 		if( *p=='\0' )
 			break;
 
@@ -61,18 +61,18 @@ void kiCmdParser::doit( char* start, bool ignoreFirst )
 			first = false;
 		else
 		{
-			// 引数を保存
+			// Save argument
 			if( *p=='-' )
 				m_Switch.add( p );
 			else
 				m_Param.add( p );
 		}
 
-		// 引数の終わりへ…
+		// Move toward end of argument...
 		while( *p!=endc && *p!='\0' )
 			p++;
 
-		// 終わりは'\0'にすることによって、引数を区切る
+		// Terminate with '\0' to delimit argument
 		if( *p!='\0' )
 			*(p++) = '\0';
 	}

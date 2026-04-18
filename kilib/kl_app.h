@@ -5,22 +5,22 @@
 #define AFX_KIAPP_H__AC24C8AF_2187_4873_83E8_AB4F2325017B__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// 汎用アプリケーションクラス
+// General-purpose application class
 
 class kiApp
 {
 friend kiApp* app();
 friend void kilib_startUp();
 
-public: //-- 外向きインターフェイス --------------------------
+public: //-- Public interface --------------------------
 
-	// インスタンス
+	// Instance
 	HINSTANCE inst() const
 		{
 			return m_hInst;
 		}
 
-	// メインウインドウ
+	// Main window
 	HWND mainhwnd() const
 		{
 			return m_pMainWnd ? m_pMainWnd->hwnd() : NULL;
@@ -34,31 +34,31 @@ public: //-- 外向きインターフェイス --------------------------
 			m_pMainWnd = wnd;
 		}
 
-	// ＯＳバージョン
+	// OS version
 	const OSVERSIONINFO& osver() const
 		{
 			return m_OsVer;
 		}
 
-	// メッセージボックス
+	// Message box
 	int msgBox( const char* msg, const char* caption=NULL, UINT type=MB_OK )
 		{
 			return ::MessageBox( mainhwnd(), msg, caption, type );
 		}
 
-	// シェルのアロケータでメモリ解放
+	// Free memory using the shell allocator
 	void shellFree( void* ptr ) const
 		{
 			m_pShellAlloc->Free( ptr );
 		}
 
-	// 仮想コード vKey のキーは押されているか？
+	// Is the key with virtual code vKey pressed?
 	static bool keyPushed( int vKey )
 		{
 			return( 0!=(::GetAsyncKeyState( vKey )>>15) );
 		}
 
-	// CommonControl / OLE 初期化
+	// CommonControl / OLE initialization
 	void shellInit()
 		{
 			if( !m_bShellInit )
@@ -82,12 +82,12 @@ public: //-- 外向きインターフェイス --------------------------
 		}
 #endif
 
-protected: //-- 派生クラス向け -----------------------------
+protected: //-- For derived classes -----------------------------
 
-	// 起動時に呼ばれる関数。必須。
+	// Function called at startup. Required.
 	virtual void run( kiCmdParser& cmd ) = 0;
 
-protected: //-- 内部処理 -----------------------------------
+protected: //-- Internal processing -----------------------------------
 
 	kiApp()
 		{
@@ -96,7 +96,10 @@ protected: //-- 内部処理 -----------------------------------
 			m_pMainWnd = NULL;
 			m_bShellInit = false;
 			m_OsVer.dwOSVersionInfoSize = sizeof( m_OsVer );
+#pragma warning(push)
+#pragma warning(disable:4996)
 			::GetVersionEx( &m_OsVer );
+#pragma warning(pop)
 			::SHGetMalloc( &m_pShellAlloc );
 		}
 

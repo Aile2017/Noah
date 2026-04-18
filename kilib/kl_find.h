@@ -5,17 +5,17 @@
 #define AFX_KIFINDFILE_H__86462791_815C_4F44_9F16_802B54B411BA__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// ファイル検索
+// File search
 
 class kiFindFile
 {
-public: //-- 外向きインターフェイス --------------------------
+public: //-- Public interface --------------------------
 
 	static bool findfirst( const char* wild, WIN32_FIND_DATA* pfd );
 	bool begin( const char* wild );
 	bool next( WIN32_FIND_DATA* pfd );
 
-public: //-- 内部処理 -----------------------------------
+public: //-- Internal processing -----------------------------------
 
 	kiFindFile()
 		{ h = INVALID_HANDLE_VALUE; }

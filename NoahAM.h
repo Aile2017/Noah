@@ -8,37 +8,37 @@
 
 class CNoahArchiverManager
 {
-public: //-- 外向けインターフェイス ------------
+public: //-- Public interface ------------
 
-	// 初期化
+	// Initialize
 	void init();
 
-	// ファイルリストを記憶
+	// Store file list
 	unsigned long set_files( const cCharArray& files );
 	unsigned long file_num() { return m_FName.len(); }
 	const kiPath& get_basepath() { return m_BasePath; }
 	bool map_melters( int mode );
 	bool map_compressor( const char* ext, const char* method, bool sfx );
 
-	// 解凍( 解凍先Dir以外の情報は中で勝手に取得します )
+	// Extract (destination dir required; other info derived internally)
 	void do_melting( kiPath& destdir );
-	// 閲覧( 解凍先Dir以外の情報は中で勝手に取得します )
+	// List/view (destination dir required; other info derived internally)
 	void do_listing( kiPath& destdir );
-	// 圧縮
+	// Compress
 	void do_compressing( kiPath& destdir, bool each );
 
 
-	// バージョン情報
+	// Version information
 	void get_version( kiStr& str );
-	// 圧縮形式リスト
+	// Compression format list
 	void get_cmpmethod( const char* set, int& def_mhd, StrArray& mhd_list, bool need_ext=false, cCharArray* ext_list=NULL );
-	// b2eが一個以上読み込まれていればtrue
+	// Returns true if at least one b2e archiver is loaded
 	bool b2e_enabled() { return m_b2e; }
 
 
-private: //-- 内部処理 ---------------------------
+private: //-- Internal processing ---------------------------
 
-	// ２重フォルダ解消など
+	// Double-folder elimination etc.
 	bool break_ddir( kiPath& dir, bool onlydir );
 	CArchiver* fromExt( const char* ext );
 	void generate_dirname( const char* src, kiPath& dst, bool rmn );
@@ -49,9 +49,9 @@ private: //-- 内部処理 ---------------------------
 	kiArray<kiPath> m_BasePathList;
 	bool m_b2e;
 
-	// 解凍用割り当て
+	// Extraction assignment
 	kiArray<CArchiver*> m_Melters;
-	// 圧縮用割り当て
+	// Compression assignment
 	CArchiver* m_Compressor;
 	int        m_Method;
 	bool       m_Sfx;

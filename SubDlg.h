@@ -16,7 +16,7 @@ public:
 			myapp().get_tempdir( m_tdir );
 		}
 
-private: //-- ダイアログとしての処理
+private: //-- Processing as dialog
 
 	BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp );
 	BOOL onInit();
@@ -46,29 +46,29 @@ private: //-- ダイアログとしての処理
 	int hlp_cnt_check();
 	bool m_bAble;
 
-private: //-- ドラッグ＆ドロップ処理
+private: //-- Drag & drop processing
 
 	bool giveData( const FORMATETC& fmt, STGMEDIUM* stg, bool firstcall );
 
-private: //-- ソート処理
+private: //-- Sort processing
 
 	void DoSort( int col );
 	static int CALLBACK lv_compare( LPARAM p1, LPARAM p2, LPARAM type );
 	bool m_bSmallFirst[6];
 
-private: //-- 右クリック
+private: //-- Right click
 
 	void DoRMenu();
 	void GenerateDirMenu( HMENU m, int& id, StrArray* sx, const kiPath& pth );
 
-private: //-- 解凍作業
+private: //-- Extraction
 
 	CArchiver* m_pArc;
 	arcname m_fname;
 	kiPath m_ddir, m_tdir;
 	aflArray m_files;
 
-//-- 存在しているウインドウ数管理。
+//-- Window instance count management.
 public:	static void clear() { st_nLife=0; }
 private:static void hello() { st_nLife++; }
 		static void byebye() { if(--st_nLife==0) kiWindow::loopbreak(); }
@@ -147,55 +147,5 @@ public:
 				else			sendMsgToItem( IDC_BAR, PBM_SETPOS, pos*100/bl );
 		}
 };
-
-
-class CArcPathCheckDlg
-{
-private:
-	class TheDlg : public kiDialog
-	{
-	public:
-		TheDlg( const char* path, HWND h )
-			: kiDialog(IDD_PATHCHECK), result(CANCEL), path(path) { doModal(h); }
-		enum { YES, ALL_YES, CANCEL } result;
-	private:
-		const char* path;
-		BOOL onInit()
-		{
-			sendMsgToItem( IDC_PATHNAME, WM_SETTEXT, 0, (LPARAM)path );
-			return TRUE;
-		}
-		BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp )
-		{
-			if( msg==WM_COMMAND )
-				switch( LOWORD(wp) )
-				{
-				case IDYES:     result = YES;     end(IDOK);     return TRUE;
-				case ID_ALLYES: result = ALL_YES; end(IDOK);     return TRUE;
-				case ID_ALLNO:  result = CANCEL;  end(IDCANCEL); return TRUE;
-				}
-			return FALSE;
-		}
-	};
-
-private:
-	bool all_yes;
-
-public:
-	CArcPathCheckDlg() : all_yes(false) {}
-
-	bool is_ok_to_extract( const char* path, kiWindow* wnd )
-	{
-		if( all_yes )
-			return true;
-		switch( TheDlg(path,wnd?wnd->hwnd():NULL).result )
-		{
-		case TheDlg::ALL_YES: all_yes = true;
-		case TheDlg::YES:     return true;
-		}
-		return false;
-	}
-};
-
 
 #endif

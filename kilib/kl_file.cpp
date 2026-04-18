@@ -35,7 +35,7 @@ unsigned long kiFile::getSize( const char* fname, unsigned long err )
 	return ans==0xffffffff ? err : ans;
 }
 
-//--------------------------- Œ‹‚ñ‚ÅŠJ‚¢‚Ä --------------------------//
+//--------------------------- Open and close --------------------------//
 
 
 bool kiFile::open( const char* filename, bool read, bool create )
@@ -74,7 +74,7 @@ void kiFile::close()
 }
 
 
-//-------------------------- “Ç‚İ‘‚« ----------------------------//
+//-------------------------- Read/Write ----------------------------//
 
 
 unsigned long kiFile::read( unsigned char* buf, unsigned long len )

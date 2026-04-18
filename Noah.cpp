@@ -10,7 +10,7 @@ extern "C" { int _afxForceEXCLUDE; }
 extern "C" BOOL WINAPI _imp__IsDebuggerPresent() { return FALSE; }
 #endif
 
-// プロセス個数制限ゾーン
+// Process instance limit zone
 class ProcessNumLimitZone
 {
 	HANDLE m_han;
@@ -34,62 +34,62 @@ public:
 };
 
 //----------------------------------------------//
-//--------- Noah のエントリポイント ------------//
+//--------- Noah entry point ------------//
 //----------------------------------------------//
 
 void kilib_create_new_app()
 {
-	//-- kilib にアプリケーションを設定
+	//-- Set application in kilib
 	new CNoahApp;
 }
 
 void CNoahApp::run( kiCmdParser& cmd )
 {
-	//-- 初期化
+	//-- Initialize
 	m_cnfMan.init();
 	m_arcMan.init();
 
-	//-- コマンドラインパラメータ保持
+	//-- Retain command line parameters
 	m_pCmd = &cmd;
 
-	//-- 「ファイル名が渡されてない or Shift押し起動」なら設定画面表示
+	//-- Show settings dialog if no files given or Shift was held at startup
 	if( cmd.param().len()==0 || keyPushed(VK_SHIFT) )
 	{
-		//-- Load-INI ( 全部 )
+		//-- Load-INI ( all )
 		m_cnfMan.load( All );
-		//-- 設定画面表示
+		//-- Show settings screen
 		m_cnfMan.dialog();
 	}
 	else
 	{
-		//-- 圧縮解凍などの作業
+		//-- Compression/extraction work
 		do_cmdline( true );
 	}
 
-	//-- 終了処理
+	//-- Exit processing
 	m_tmpDir.remove();
 }
 
 //----------------------------------------------//
-//------------- 圧縮/解凍 の 作業 --------------//
+//------------- Compression/Extraction work --------------//
 //----------------------------------------------//
 
 bool CNoahApp::is_writable_dir( const kiPath& path )
 {
-	// 要するに、CDROM/DVDROM を切りたい。
-	// FDD, PacketWriteなDisk を切るのはあきらめる。
+	// Essentially, exclude CD-ROM/DVD-ROM drives.
+	// Give up on excluding FDD and packet-write disks.
 
-	// RAMDISK, REMOTE, FIXED, UNKNOWN なディスクは書き込み可能と見なす
+	// Treat RAMDISK, REMOTE, FIXED, UNKNOWN disks as writable
 	UINT drv = path.getDriveType();
 	if( drv==DRIVE_REMOVABLE || drv==DRIVE_CDROM )
 	{
-		// 素Win95では使えない関数なのでDynamicLoad
+		// Dynamic-load since this API is not available on bare Win95
 		typedef BOOL (WINAPI*pGDFSE)( LPCTSTR, PULARGE_INTEGER, PULARGE_INTEGER, PULARGE_INTEGER );
 		pGDFSE pGetDiskFreeSpaceEx
 			= (pGDFSE) ::GetProcAddress( ::GetModuleHandle("kernel32.dll"), "GetDiskFreeSpaceExA" );
 		if( pGetDiskFreeSpaceEx )
 		{
-			// 空き容量が0なら、書き込み不可とみなす
+			// If free space is 0, treat as not writable
 			ULARGE_INTEGER fs, dummy;
 			pGetDiskFreeSpaceEx( path, &dummy, &dummy, &fs );
 			if( fs.QuadPart == 0 )
@@ -109,14 +109,14 @@ void CNoahApp::do_files( const cCharArray& files,
 						 bool  basicaly_ignore )
 {
 	struct local {
-		~local() {kiSUtil::switchCurDirToExeDir(); } // ディレクトリロックしないように
+		~local() {kiSUtil::switchCurDirToExeDir(); } // Avoid holding a directory lock
 	} _;
 
-	//-- Archiver Manager にファイル名リストを記憶する
+	//-- Store file name list in Archiver Manager
 	if( 0 == m_arcMan.set_files( files ) )
 		return;
 
-	//-- 作業用変数
+	//-- Working variables
 	enum { unknown, melt, compress }
 			whattodo = unknown;
 	bool	ctrl_mlt = keyPushed( VK_CONTROL );
@@ -126,7 +126,7 @@ void CNoahApp::do_files( const cCharArray& files,
 	kiPath  destdir;
 	kiStr tmp(300);
 
-	//-- ( もしあれば )コマンドラインオプションを解釈
+	//-- Parse command-line options (if any)
 	if( opts )
 		for( unsigned int i=0; i!=opts->len(); i++ )
 			switch( (*opts)[i][1] )
@@ -155,23 +155,23 @@ void CNoahApp::do_files( const cCharArray& files,
 						break;}
 			}
 
-	//-- Load-INI ( 動作モード設定 )
+	//-- Load-INI ( operation mode settings )
 	m_cnfMan.load( Mode );
 
-	//-- 圧縮解凍のどちらを行うか決定する。流れは以下の通り。
+	//-- Decide whether to compress or extract. Flow is as follows.
 	//
-	// ・コマンドラインで、圧縮と指定されてれば無条件で圧縮へ
+	// - If compression is specified on the command line, always compress.
 	//
-	// ・そうでなければ、まずNoahの動作モード取得
-	// 　m0:圧縮専用  m1:圧縮優先  m2:解凍優先  m3:解凍専用
-	// 　　コマンドラインで解凍と指定されていれば m3。
-	// 　　指定が無ければ、m_cnfMan から読み込み。
+	// - Otherwise, first get Noah's operation mode.
+	//   m0:compress-only  m1:compress-preferred  m2:extract-preferred  m3:extract-only
+	//   If extraction is specified on the command line, use m3.
+	//   If not specified, read from m_cnfMan.
 	//
-	// ・m0 か、'm1でしかもファイルが複数' の時は無条件で圧縮へ
+	// - Unconditionally compress if m0, or if m1 and multiple files.
 	//
-	// ・そうでなければ、解凍ルーチンを割り当ててみる。
-	// 　この際、m3 以外のときは一個でも割り当て失敗したらエラー＞圧縮へ
-	// 　m3 でも、一個も割り当てられなければエラー。＞処理終了
+	// - Otherwise, try to assign an extraction routine.
+	//   For modes other than m3, any assignment failure falls back to compression.
+	//   For m3, if nothing can be assigned, report an error and exit.
 
 	if( whattodo != compress )
 	{
@@ -183,7 +183,7 @@ void CNoahApp::do_files( const cCharArray& files,
 			whattodo = compress;
 		else
 		{
-			//-- 解凍ルーチン割り当ててみる
+			//-- Try assigning extraction routine
 			bool suc = m_arcMan.map_melters( mode );
 			if( suc )
 				whattodo = melt;
@@ -193,7 +193,7 @@ void CNoahApp::do_files( const cCharArray& files,
 					whattodo = compress;
 				else
 				{
-					//-- 解凍専用モードだけど解凍不可！！
+					//-- Extract-only mode but extraction is impossible!!
 					msgBox( tmp.loadRsrc(IDS_M_ERROR) );
 					return;
 				}
@@ -203,11 +203,11 @@ void CNoahApp::do_files( const cCharArray& files,
 
 	if( whattodo == melt )
 	{
-		//-- 解凍設定は既にm_cnfMan.init()でロードされている…
+		//-- Extraction settings already loaded by m_cnfMan.init()...
 
 		if( destdir.len()==0 )
 		{
-			//-- 解凍先ディレクトリ取得
+			//-- Get extraction destination directory
 			if( m_cnfMan.mdirsm() )
 				if( is_writable_dir(m_arcMan.get_basepath()) )
 					destdir = m_arcMan.get_basepath();
@@ -215,7 +215,7 @@ void CNoahApp::do_files( const cCharArray& files,
 				destdir = m_cnfMan.mdir();
 		}
 
-		//-- 解凍
+		//-- Extract
 		if( ctrl_mlt )	m_arcMan.do_listing( destdir );
 		else {
 			ProcessNumLimitZone zone( mycnf().multiboot_limit(), "LimitterForNoahAtKmonosNet" );
@@ -224,12 +224,12 @@ void CNoahApp::do_files( const cCharArray& files,
 	}
 	else
 	{
-		//-- Load-INI( 圧縮設定 )
+		//-- Load-INI( compression settings )
 		m_cnfMan.load( Compress );
 
 		if( destdir.len()==0 )
 		{
-			//-- 圧縮先ディレクトリ取得
+			//-- Get compression destination directory
 			if( m_cnfMan.cdirsm() )
 				if( is_writable_dir(m_arcMan.get_basepath()) )
 					destdir = m_arcMan.get_basepath();
@@ -240,37 +240,37 @@ void CNoahApp::do_files( const cCharArray& files,
 		else if( !method ) method = "";
 		if( !method  ) method  = m_cnfMan.cmhd();
 
-		//-- 圧縮用ルーチンを割り当て
+		//-- Assign compression routine
 		if( !m_arcMan.map_compressor( cmptype, method, ctrl_cmp ) )
 		{
-			//-- 圧縮不能な形式！！
+			//-- Incompressible format!!
 			msgBox( tmp.loadRsrc(IDS_C_ERROR) );
 			return;
 		}
 
-		//-- 圧縮
+		//-- Compress
 		ProcessNumLimitZone zone( mycnf().multiboot_limit(), "LimitterForNoahAtKmonosNet" );
 		m_arcMan.do_compressing( destdir, alt );
 	}
 }
 
 //----------------------------------------------//
-//----------------- その他雑用 -----------------//
+//----------------- Misc utilities -----------------//
 //----------------------------------------------//
 
 // from= 0:normal 1:melt 2:compress
 void CNoahApp::open_folder( const kiPath& path, int from )
 {
-	if( from==1 || from==2 ) //-- Shellに更新通知
+	if( from==1 || from==2 ) //-- Notify Shell of update
 		::SHChangeNotify( SHCNE_UPDATEDIR, SHCNF_PATH, (const void*)(const char*)path, NULL );
 
-	//-- デスクトップだったら開かない
+	//-- Don't open if it's the desktop
 	kiPath dir(path), tmp(kiPath::Dsk,false);
 	dir.beBackSlash(false), dir.beShortPath(), tmp.beShortPath();
 
 	if( !tmp.isSame( dir ) )
 	{
-		//-- Load-INI( フォルダ開き設定 )
+		//-- Load-INI( folder open settings )
 		m_cnfMan.load( OpenDir );
 		if( (from==1 && !m_cnfMan.modir())
 		 || (from==2 && !m_cnfMan.codir()) )
@@ -282,7 +282,7 @@ void CNoahApp::open_folder( const kiPath& path, int from )
 	}
 }
 
-// 全システム中で一意なテンポラリフォルダを作って返す
+// Create and return a system-unique temporary folder
 void CNoahApp::get_tempdir( kiPath& tmp )
 {
 	char buf[MAX_PATH];

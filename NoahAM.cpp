@@ -8,34 +8,36 @@
 #include "ArcB2e.h"
 
 //----------------------------------------------//
-//------ ���������̃f�[�^�ŏ��������Ă��� ------//
+//------ Initialize with working archiver data ------//
 //----------------------------------------------//
 
 void CNoahArchiverManager::init()
 {
+	// Load extended scripts
 	char prev_cur[MAX_PATH];
 	::GetCurrentDirectory(MAX_PATH, prev_cur);
 	::SetCurrentDirectory( CArcB2e::init_b2e_path() );
 	kiFindFile find;
 	find.begin( "*.b2e" );
 	WIN32_FIND_DATA fd;
-	for( int t=0; find.next(&fd); t++ )
+	int t=0;
+	for( ; find.next(&fd); t++ )
 		m_AList.add( new CArcB2e(fd.cFileName) );
 	m_b2e = (t>0);
 	::SetCurrentDirectory(prev_cur);
 }
 
 //----------------------------------------------//
-//------------ �t�@�C�����X�g���L�� ------------//
+//------------ Store file list ------------//
 //----------------------------------------------//
 
 unsigned long CNoahArchiverManager::set_files( const cCharArray& files )
 {
-	//-- �N���A
+	//-- Clear
 	m_FName.empty();
 	m_BasePathList.empty();
 
-	//-- ���p�X���擾( �o���邾�����p�͈͂��L���邽�߁A8.3�`���� )
+	//-- Get base path (in 8.3 format to maximize compatibility)
 	if( files.len() != 0 )
 	{
 		char spath[MAX_PATH];
@@ -49,10 +51,11 @@ unsigned long CNoahArchiverManager::set_files( const cCharArray& files )
 		}
 	}
 
-	//-- �Z���t�@�C�����ƒ����̂𗼕��擾���Ă���
+	//-- Get both short and long file names
 	m_FName.alloc( files.len() );
 	m_BasePathList.alloc( files.len() );
-	for( unsigned int i=0,c=0; i!=files.len(); i++ )
+	unsigned int i=0,c=0;
+	for( ; i!=files.len(); i++ )
 		if( kiFindFile::findfirst( files[i], &m_FName[c] ) )
 		{
 			if( m_FName[c].cAlternateFileName[0] == '\0' )
@@ -71,10 +74,10 @@ unsigned long CNoahArchiverManager::set_files( const cCharArray& files )
 }
 
 //----------------------------------------------//
-//--- �t�@�C�����X�g�ɉ𓀃��[�`�������蓖�� ---//
+//--- Assign extraction routines to file list ---//
 //----------------------------------------------//
 
-// �w�肳�ꂽ�g���q�ɑΉ����Ă��郋�[�`������`�T��
+// Linear search for routines supporting the given extension
 CArchiver* CNoahArchiverManager::fromExt( const char* ext )
 {
 	kiStr tmp = ext;
@@ -89,7 +92,7 @@ CArchiver* CNoahArchiverManager::fromExt( const char* ext )
 
 bool CNoahArchiverManager::map_melters( int mode ) // 1:cmp 2:mlt 3:must_mlt
 {
-	// �N���A
+	// Clear
 	m_Melters.empty();
 
 #define attrb (m_FName[ct].dwFileAttributes)
@@ -98,32 +101,33 @@ bool CNoahArchiverManager::map_melters( int mode ) // 1:cmp 2:mlt 3:must_mlt
 
 	kiPath fnm;
 	const char* ext;
-	for( unsigned int ct=0, bad=0; ct!=file_num(); ct++ )
+	unsigned int ct=0, bad=0;
+	for( ; ct!=file_num(); ct++ )
 	{
 //		fnm = m_BasePath, fnm += sname;
 		fnm = m_BasePathList[ct], fnm += sname;
 
-		//-- 0byte�t�@�C�� / �f�B���N�g���͒e��
+		//-- Reject 0-byte files / directories
 		if( !(attrb & FILE_ATTRIBUTE_DIRECTORY) && 0!=kiFile::getSize( fnm, 0 ) )
 		{
-			//-- �܂��Ή��g���q���ǂ����Ō��`����I�o
+			//-- First select one candidate A by extension match
 			CArchiver* x = fromExt( ext=kiPath::ext(lname) );
 
-			//-- ���`�ŁA�t�@�C�����e�ɂ��`�F�b�N
+			//-- Check candidate A against file contents
 			if( x && x->check( fnm ) )
 			{
 				m_Melters.add( x );
 				continue;
 			}
 
-			//-- ���`�����e�`�F�b�N�s�Ȃ��̂������炻����g��
+			//-- Use candidate A if it cannot do content check
 			if( x && !(x->ability() & aCheck) )
 			{
 				m_Melters.add( x );
 				continue;
 			}
 
-			//-- ���`���_���Ȃ�A���̑��̓��e�`�F�b�N�\�ȃ��[�`���S�ĂŎ���
+			//-- If candidate A fails, try all other content-checkable routines
 			if( mode!=1 || 0==ki_strcmpi( "exe", ext ) )
 			{
 				for( unsigned long j=0; j!=m_AList.len(); j++ )
@@ -137,9 +141,9 @@ bool CNoahArchiverManager::map_melters( int mode ) // 1:cmp 2:mlt 3:must_mlt
 			}
 		}
 
-		//-- �`�F�b�N�̌��ʁA�𓀕s�\�ł����Ƃ�
+		//-- Extraction impossible after checking
 		if( mode!=3 )
-			return false; //-- �𓀐�p���[�h�łȂ���ΏI��
+			return false; //-- Exit if not in extract-only mode
 		m_Melters.add( NULL ), bad++;
 	}
 #undef sname
@@ -150,7 +154,7 @@ bool CNoahArchiverManager::map_melters( int mode ) // 1:cmp 2:mlt 3:must_mlt
 }
 
 //----------------------------------------------//
-//--- �t�@�C�����X�g�Ɉ��k���[�`�������蓖�� ---//
+//--- Assign compression routine to file list ---//
 //----------------------------------------------//
 
 bool CNoahArchiverManager::map_compressor( const char* ext, const char* method, bool sfx )
@@ -161,13 +165,13 @@ bool CNoahArchiverManager::map_compressor( const char* ext, const char* method, 
 
 	for( unsigned int i=0; i!=m_AList.len(); i++ )
 		if( -1 != (m=m_AList[i]->cancompressby(ext,method,sfx)) )
-			if( m!=-2 ) // ���S��v
+			if( m!=-2 ) // Exact match
 			{
 				m_Compressor = m_AList[i];
 				m_Method = m;
 				break;
 			}
-			else if( m_Method == -1 ) // �`�����݈̂�v�����ŏ��̃��m
+			else if( m_Method == -1 ) // First match by format name only
 			{
 				m_Compressor = m_AList[i];
 				m_Method = m_AList[i]->cmp_mhd_default();
@@ -176,7 +180,7 @@ bool CNoahArchiverManager::map_compressor( const char* ext, const char* method, 
 }
 
 //----------------------------------------------//
-//------------ �o�[�W������񕶎��� ------------//
+//------------ Version info string ------------//
 //----------------------------------------------//
 
 void CNoahArchiverManager::get_version( kiStr& str )
@@ -188,7 +192,7 @@ void CNoahArchiverManager::get_version( kiStr& str )
 }
 
 //----------------------------------------------//
-//--------------- ���k�`�����X�g ---------------//
+//--------------- Compression format list ---------------//
 //----------------------------------------------//
 
 static unsigned int find( const cCharArray& x, const char* o )
@@ -248,7 +252,7 @@ void CNoahArchiverManager::get_cmpmethod(
 }
 
 //----------------------------------------------//
-//--------------- ���Ɉꗗ���[�h ---------------//
+//--------------- Archive listing mode ---------------//
 //----------------------------------------------//
 
 #include "SubDlg.h"
@@ -261,12 +265,13 @@ void CNoahArchiverManager::do_listing( kiPath& destdir )
 	bool   rmn = mycnf().mnonum();
 	destdir.beBackSlash( true );
 
-	//-- �_�C�A���O�̌��J�E���^���N���A
+	//-- Clear dialog instance counter
 	kiArray<CArcViewDlg*> views;
 	CArcViewDlg::clear();
 
-	//-- �_�C�A���O�N��
-	for( unsigned int i=0; i!=m_FName.len(); i++ )
+	//-- Launch dialog
+	unsigned int i=0;
+	for( ; i!=m_FName.len(); i++ )
 	{
 		if( !m_Melters[i] )
 			continue;
@@ -286,33 +291,33 @@ void CNoahArchiverManager::do_listing( kiPath& destdir )
 		x->createModeless( NULL );
 	}
 
-	//-- �S���I������܂őҋ@
+	//-- Wait until all windows are closed
 	kiWindow::msgLoop( kiWindow::GET );
 
-	//-- ���I��
+	//-- Done
 	app()->setMainWnd( mptr );
 	for( i=0; i!=views.len(); i++ )
 		delete views[i];
 }
 
 //----------------------------------------------//
-//----------------- �𓀍�� -------------------//
+//----------------- Extraction work -------------------//
 //----------------------------------------------//
 
 void CNoahArchiverManager::do_melting( kiPath& destdir )
 {
-	//-- �ݒ胍�[�h
+	//-- Load settings
 	const int  mdf = mycnf().mkdir();  // Make Directory Flag( 0:no 1:no1file 2: noddir 3:yes )
 	const bool rmn = mycnf().mnonum(); // Remove NuMber ?
 
-	//-- �o�͐�
+	//-- Output destination
 	destdir.beBackSlash( true );
 	destdir.mkdir(), destdir.beShortPath();
 
 	for( unsigned int i=0; i!=m_FName.len(); i++ )
 		if( m_Melters[i] )
 		{
-			//-- �o�͐�
+			//-- Output destination
 
 			int mk=2; // 0:no 1:yes 2:???
 			kiPath ddir( destdir ), dnm;
@@ -327,7 +332,7 @@ void CNoahArchiverManager::do_melting( kiPath& destdir )
 				anm+=m_FName[i].cFileName;
 				int c = m_Melters[i]->contents( anm, dnm );
 				if( c==aSingleDir || (c==aSingleFile && mdf==1) )
-					mk=0; // �Q�d�t�H���_�h�~����(��)
+					mk=0; // Double-folder prevention (strong)
 				else if( c==aMulti )
 					mk=1;
 			}
@@ -341,7 +346,7 @@ void CNoahArchiverManager::do_melting( kiPath& destdir )
 				ddir.beShortPath();
 			}
 
-			//-- �𓀁I
+			//-- Extract!
 
 			arcname an( m_BasePathList[i],
 //			arcname an( m_BasePath,
@@ -350,17 +355,17 @@ void CNoahArchiverManager::do_melting( kiPath& destdir )
 			int result = m_Melters[i]->melt( an, ddir );
 			if( result<0x8000 )
 			{
-				if( mk==2 ) // �Q�d�t�H���_�h�~����(��)
+				if( mk==2 ) // Double-folder prevention (weak)
 					break_ddir( ddir, mdf==2 );
-				else if( mk==0 && dnm.len() ) // �Q�d�t�H���_�h�~����(��)
-					if( dnm.len()<=1 || dnm[1]!=':' ) // ��΃p�X�͊J���Ȃ�
+				else if( mk==0 && dnm.len() ) // Double-folder prevention (strong)
+					if( dnm.len()<=1 || dnm[1]!=':' ) // Do not open absolute paths
 						ddir+=dnm, ddir+='\\';
-				// �o�͐���J������
+				// Maybe open output destination
 				myapp().open_folder( ddir, 1 );
 			}
 			else if( result!=0x8020 )
 			{
-				//�G���[�I
+				//Error!
 				char str[255];
 				wsprintf( str, "%s\nError No: [%x]",
 					(const char*)kiStr().loadRsrc( IDS_M_ERROR ), result );
@@ -371,16 +376,16 @@ void CNoahArchiverManager::do_melting( kiPath& destdir )
 
 void CNoahArchiverManager::generate_dirname( const char* src, kiPath& dst, bool rmn )
 {
-	// src�Ŏ����ꂽ���ɖ�����f�B���N�g�����𐶐����A
-	// dst�֑����Brmn==true�Ȃ疖���̐������폜
+	// Generate directory name from archive name indicated by src,
+	// and append to dst. If rmn==true, also remove trailing numbers.
 
-	// ��ԍ��� . �ƍ������Ԗڂ� . ��T��
+	// Find the leftmost and second-leftmost dots
 	const char *fdot=NULL, *sdot=NULL, *tail;
 	for( tail=src; *tail; tail=kiStr::next(tail) )
 		if( *tail=='.' )
 			sdot=fdot, fdot=tail;
 
-	// .tar.xxx ���A.xxx.gz/.xxx.z/.xxx.bz2 �Ȃ��폜
+	// Remove two extensions if .tar.xxx or .xxx.gz/.xxx.z/.xxx.bz2
 	if( fdot )
 	{
 		tail = fdot;
@@ -396,7 +401,7 @@ void CNoahArchiverManager::generate_dirname( const char* src, kiPath& dst, bool 
 				tail = sdot;
 	}
 
-	// �����̐�����'-'��'_'��'.'�폜�B���p�X�y�[�X���B
+	// Remove trailing digits, '-', '_', '.', and spaces.
 	bool del[256];
 	ki_memzero( del, sizeof(del) );
 	if( rmn )
@@ -416,7 +421,7 @@ void CNoahArchiverManager::generate_dirname( const char* src, kiPath& dst, bool 
 	if( mjs && mjs!=src )
 		tail = mjs;
 
-	// ��ɂȂ��Ă��܂����� "noahmelt" �Ƃ������O�ɂ��Ă��܂��B
+	// If the result is empty, use "noahmelt" as the name.
 	if( src==tail )
 		dst += "noahmelt";
 	else
@@ -426,14 +431,14 @@ void CNoahArchiverManager::generate_dirname( const char* src, kiPath& dst, bool 
 
 bool CNoahArchiverManager::break_ddir( kiPath& dir, bool onlydir )
 {
-// �Q�d�t�H���_ or �P��t�@�C�� ��Ԃ�����
+// Resolve double-folder or single-file condition
 //
-// �f���Ɋi�[�t�@�C��������x��������̂��{���Ȃ�ł����A
-// ���ɋ��发�ɂ̎����x�ቺ���������̂ƁAFindFirst�n��
-// �T�|�[�g����DLL������G���W���ȊO�ɑΉ��ł��Ȃ��Ƃ���
-// ���_�����邽�߁A���ς�炸 Noah 2.xx �Ɠ�����@�ł��B
+// The proper approach would be a single scan of stored filenames,
+// but it causes severe slowdowns on large archives and cannot support
+// DLLs or built-in engines that lack FindFirst-style APIs,
+// so we use the same technique as Noah 2.xx.
 
-//-- ���ɂP���������ĂȂ����Ƃ��m�F -----------------
+//-- Confirm there is exactly one item inside -----------------
 	char wild[MAX_PATH];
 	ki_strcpy( wild, dir );
 	ki_strcat( wild, "*.*" );
@@ -447,21 +452,21 @@ bool CNoahArchiverManager::break_ddir( kiPath& dir, bool onlydir )
 	find.close();
 //----------------------------------------------------
 
-//-- to:�ŏI�ړ���t�@�C�����B���łɁA�J�����gDir�͏����Ȃ����̉���� -----
+//-- to: final destination filename; also a workaround for the 'can't delete current dir' problem -----
 	kiPath to(dir); to.beBackSlash( false ), to.beDirOnly();
 	::SetCurrentDirectory( to );
 	to += fd.cFileName;
 //-------------------------------------------------------------------------
 
-//-- �t�@�C���������ꍇ --------------------------------------
+//-- If it is a file --------------------------------------
 	if( !(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
 	{
 		if( !onlydir )
 		{
-			// now ���݂̃t�@�C����
+			// now: current filename
 			kiStr now=dir; now+=fd.cFileName;
 
-			// now -> to �ړ�
+			// now -> to: move
 			if( ::MoveFile( now, to ) )
 			{
 				dir.remove();
@@ -470,11 +475,11 @@ bool CNoahArchiverManager::break_ddir( kiPath& dir, bool onlydir )
 			}
 		}
 	}
-//-- �t�H���_�������ꍇ ----------------------------------------
+//-- If it is a folder ----------------------------------------
 	else
 	{
-		// 'base/aaa/aaa/' ���ƒ���aaa���O��move�ł��Ȃ��B
-		// ����āA�����B-> 'base/aaa_noah_tmp_178116/aaa/'
+		// Can't move inner 'aaa' out if path is 'base/aaa/aaa/'.
+		// Workaround: rename to 'base/aaa_noah_tmp_178116/aaa/'
 
 		dir.beBackSlash( false );
 		kiFindFile::findfirst( dir, &fd3 );
@@ -482,10 +487,10 @@ bool CNoahArchiverManager::break_ddir( kiPath& dir, bool onlydir )
 
 		if( ::MoveFile( dir, dirx ) )
 		{
-			// now ���݂̃t�@�C����
+			// now: current filename
 			kiStr now( dirx ); now+='\\', now+=fd.cFileName;
 
-			// �f�B���N�g�����ړ�
+			// Move directory
 			if( ::MoveFile( now, to ) )
 			{
 				dirx.remove();
@@ -507,19 +512,19 @@ bool CNoahArchiverManager::break_ddir( kiPath& dir, bool onlydir )
 }
 
 //----------------------------------------------//
-//----------------- ���k��� -------------------//
+//----------------- Compression work -------------------//
 //----------------------------------------------//
 
 void CNoahArchiverManager::do_compressing( kiPath& destdir, bool each )
 {
 	int result = 0xffff, tr;
 
-	// �o�͐���m���ɍ���Ă���
+	// Ensure output destination exists
 	destdir.beBackSlash( true );
 	destdir.mkdir();
 	destdir.beShortPath();
 
-	// �ʈ��k���[�h���AArchiving�s�̌`���Ȃ�����
+	// Per-file mode or non-archiving format: process one at a time
 	if( each || !(m_Compressor->ability() & aArchive) )
 	{
 		wfdArray templist;
@@ -536,12 +541,12 @@ void CNoahArchiverManager::do_compressing( kiPath& destdir, bool each )
 	else
 		result = m_Compressor->compress( m_BasePath,m_FName,destdir,m_Method,m_Sfx );
 
-	// �J������
+	// Maybe open folder
 	if( result<0x8000 )
 		myapp().open_folder( destdir, 2 );
 	else if( result!=0x8020 )
 	{
-		//�G���[�I
+		//Error!
 		char str[255];
 		wsprintf( str, "%s\nError No: [%x]", "Compression Error", result );
 		app()->msgBox( str );

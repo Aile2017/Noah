@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "kilib.h"
 
-//------------ 唯一のアプリケーションオブジェクトの管理 ------------//
+//------------ Management of the single application object ------------//
 
 kiApp* kiApp::st_pApp = NULL;
 
@@ -13,49 +13,37 @@ kiApp* app()
 	return kiApp::st_pApp;
 }
 
-//-------------------- スタートアップコード ------------------------//
+//-------------------- Startup code ------------------------//
 
 void kilib_startUp()
 {
-	// 英語ロケールテスト用
+	// For English locale testing
 	//::SetThreadUILanguage(0x0409);
 
-	//-- K.I.LIB 初期化
+	//-- K.I.LIB initialization
 	kiStr::init();
 	kiWindow::init();
 
-	//-- キーボード状態クリア
+	//-- Clear keyboard state
 	::GetAsyncKeyState( VK_SHIFT );
 
-	//-- アプリケーションインスタンスを作成
+	//-- Create application instance
 	kilib_create_new_app();
 	if( app() )
 	{
-		// コマンドライン分割
+		// Command line splitting
 		kiCmdParser cmd( ::GetCommandLine(), true );
 
-		// 実行
+		// Execute
 		app()->run( cmd );
 	}
 
-	//-- K.I.LIB 終了
+	//-- K.I.LIB termination
 	kiWindow::finish();
 
 	delete app();
 	::ExitProcess( 0 );
 }
-
-//--------------- C-Runtime初期化コード削除周りの処理 ---------------//
-
-#if 0
-
-int APIENTRY WinMain( HINSTANCE, HINSTANCE, char*, int )
-{
-	kilib_startUp();
-	return 0;
-}
-
-#else
 
 void* operator new( size_t siz )
 {
@@ -69,9 +57,7 @@ void operator delete( void* ptr )
 
 void main()
 {
-	// main がないと何故か libc.lib がリンクエラーになるのでダミー
+	// Dummy main to avoid libc.lib link error that occurs without it
 }
-
-#endif
 
 //--------------------------------------------------------------//

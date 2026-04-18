@@ -5,13 +5,13 @@
 #define AFX_KIREGKEY_H__4FD5E1B3_B8FE_45B3_B19E_3D30407C94BA__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// レジストリ操作＆ini操作
+// Registry and INI file operations
 
 class kiRegKey
 {
-public: //-- 外向きインターフェイス --------------------------
+public: //-- Public interface --------------------------
 
-	// 開く＆閉じる
+	// Open & close
 	bool open( HKEY parent, LPCTSTR keyname, REGSAM access = KEY_ALL_ACCESS );
 	bool create( HKEY parent, LPCTSTR keyname, REGSAM access = KEY_ALL_ACCESS );
 	void close()
@@ -20,7 +20,7 @@ public: //-- 外向きインターフェイス --------------------------
 				RegCloseKey( m_hKey );
 		}
 
-	// サブキーが存在するや否や
+	// Whether a subkey exists
 	bool exist( LPCTSTR keyname )
 		{
 			HKEY k;
@@ -31,27 +31,27 @@ public: //-- 外向きインターフェイス --------------------------
 			}
 			return false;
 		}
-	// HKEYへキャスト
+	// Cast to HKEY
 	operator HKEY() const
 		{
 			return m_hKey;
 		}
 
-	// 値を得る
+	// Get value
 	bool get( LPCTSTR valname, DWORD* val );
 	bool get( LPCTSTR valname, BYTE* val, DWORD siz );
 	bool get( LPCTSTR valname, kiStr* val );
 
-	// 値を設定
+	// Set value
 	bool set( LPCTSTR valname, DWORD val );
 	bool set( LPCTSTR valname, BYTE* val, DWORD siz );
 	bool set( LPCTSTR valname, LPCTSTR val );
 
-	// 削除
+	// Delete
 	bool del( LPCTSTR valname );
 	bool delSubKey( LPCTSTR keyname );
 
-public: //-- 内部処理 -----------------------------------
+public: //-- Internal processing -----------------------------------
 
 	kiRegKey()
 		{
@@ -71,26 +71,26 @@ private:
 
 class kiIniFile
 {
-public: //-- 外向きインターフェイス --------------------------
+public: //-- Public interface --------------------------
 
-	// iniファイル名を設定
+	// Set ini filename
 	void setFileName( const char* ini, bool exepath=true );
 	void setSection( const char* section )
 		{ m_CurSec = section; }
 
-	// 読み込み
-	// ※ 注意！getStrの返値は内部バッファな為、
-	// ※　　　 呼び出し直後以外は内容を保証しない。
+	// Read
+	// Note: the return value of getStr is an internal buffer;
+	// its contents are only valid immediately after the call.
 	int getInt( const char* key, int defval );
 	bool getBool( const char* key, bool defval );
 	const char* getStr( const char* key, const char* defval );
 
-	// 書き込み
+	// Write
 	bool putStr( const char* key, const char* val );
 	bool putInt( const char* key, int val );
 	bool putBool( const char* key, bool val );
 
-private: //-- 内部処理 -----------------------------------
+private: //-- Internal processing -----------------------------------
 
 	kiPath m_FileName;
 	kiStr m_CurSec;

@@ -9,25 +9,25 @@
 
 class CNoahApp : public kiApp  
 {
-public: //-- 外向けインターフェイス ------
+public: //-- Public interface ------
 
-	//-- 圧縮/解凍作業
+	//-- Compression/extraction operations
 	void do_cmdline( bool directcall=false );
 	void do_files( const cCharArray& files,
 				   const cCharArray* opts=NULL,
 				   bool basicaly_ignore=false );
 
-	//-- 雑用(笑)
+	//-- Misc utilities
 	void open_folder( const kiPath& path,int from=0 );
 	void get_tempdir( kiPath& tmp );
 	bool is_writable_dir( const kiPath& path );
 
-	//-- Noahオブジェクト取得用マクロ
+	//-- Macro to get Noah object
 #	define myapp() (*(CNoahApp*)app())
 #	define myarc() (*(((CNoahApp*)app())->arc()))
 #	define mycnf() (*(((CNoahApp*)app())->cnf()))
 
-public: //-- 内部処理 --------------------
+public: //-- Internal processing --------------------
 
 	CNoahArchiverManager* arc(){ return &m_arcMan; }
 	CNoahConfigManager* cnf()  { return &m_cnfMan; }

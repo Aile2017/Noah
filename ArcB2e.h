@@ -66,7 +66,7 @@ private: //--<RythpScript>--
 	CArcModule* exe;
 	kiArray<kiStr> m_subFile;
 
-	// script˜AŒg
+	// script interface
 	bool load_module( const char* name );
 	int m_Result;
 	bool m_usMode;

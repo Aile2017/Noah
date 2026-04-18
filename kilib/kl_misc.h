@@ -5,8 +5,8 @@
 #define AFX_KILIBBASE_H__89998F34_A9FE_4A27_A159_671F85AA9383__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// 使用する外部関数を何となくマクロ化しておく
-// 追記：何でこんなことやったんだ…？　＞　昔の自分(^^;
+// Macros for commonly used external functions
+// Note: Why did I do this...? > Past self (^^;
 
 #define ki_strlen(p)      ::lstrlen(p)
 #define ki_strcpy(p,s)    ::lstrcpy(p,s)
@@ -24,32 +24,32 @@ inline bool ki_memcmp( const char* x, const char* y, int l )
 }
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// kiArray : 配列のようなキューのような代物
+// kiArray : array-like queue-like container
 
 template <class T> class kiArray
 {
-public: //-- 外向きインターフェイス --------------------------
+public: //-- Public interface --------------------------
 
-	// 初期サイズ( 10～255 )で初期化
+	// Initialize with initial size (10 to 255)
 	kiArray( unsigned char start_size=10 )
 		{
 			m_pArray = new T[ m_ALen=start_size ];
 			m_Len = 0;
 		}
 
-	// 配列を空にする
+	// Clear the array
 	void empty()
 		{
 			m_Len = 0;
 		}
 
-	// 要素数を取得
+	// Get element count
 	unsigned long len() const
 		{
 			return m_Len;
 		}
 
-	// 末尾に一個追加
+	// Append one element
 	void add( const T& obj )
 		{
 			if( m_Len>=m_ALen )
@@ -63,7 +63,7 @@ public: //-- 外向きインターフェイス --------------------------
 			m_pArray[ m_Len++ ] = obj;
 		}
 
-	// 要素にアクセス
+	// Access element
 	T& operator []( unsigned long i )
 		{
 			return m_pArray[i];
@@ -73,7 +73,7 @@ public: //-- 外向きインターフェイス --------------------------
 			return m_pArray[i];
 		}
 
-	// 配列コピー
+	// Array copy
 	kiArray<T>& operator = ( const kiArray<T>& o )
 		{
 			if( &o != this )
@@ -85,7 +85,7 @@ public: //-- 外向きインターフェイス --------------------------
 			return *this;
 		}
 
-	//-- ちょっと危険なメソッド群
+	//-- Somewhat dangerous methods
 	void alloc( unsigned long x )
 		{
 			if( x > m_ALen )
@@ -103,7 +103,7 @@ public: //-- 外向きインターフェイス --------------------------
 			m_Len = x;
 		}
 
-private: //-- 内部処理 -----------------------------------
+private: //-- Internal processing -----------------------------------
 
 	T* m_pArray;
 	unsigned long m_Len, m_ALen;

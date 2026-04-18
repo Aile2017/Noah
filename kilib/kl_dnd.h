@@ -5,11 +5,11 @@
 #define AFX_KIDROPSOURCE_H__141BEF0D_0DA2_4156_93E4_313535916A23__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// kiDataObject : ドロップデータとしての標準処理
+// kiDataObject : standard processing as drop data
 
 class kiDataObject : public IDataObject
 {
-protected: // 派生クラス向け処理
+protected: // For derived classes
 
 	virtual bool giveData( const FORMATETC& fmt, STGMEDIUM* stg, bool firstcall ) = 0;
 	void addFormat( const FORMATETC& frm )
@@ -56,7 +56,7 @@ private: //-- IDataObject ------------
 			return OLE_E_ADVISENOTSUPPORTED;
 		}
 
-private: //-- 内部処理 -----------------
+private: //-- Internal processing -----------------
 
 	kiArray<FORMATETC> m_FormatList;
 	bool m_bFirst;
@@ -70,11 +70,11 @@ public:
 };
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// kiDropSource : ドロップ元としての標準処理
+// kiDropSource : standard processing as drag source
 
 class kiDropSource : public IDropSource
 {
-public: //-- ドラッグ＆ドロップ実行！
+public: //-- Execute drag & drop!
 
 	static bool DnD( kiDataObject* pObj, DWORD efct, DWORD* pefct=NULL );
 

@@ -16,9 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
-    <None Include="b2e.ico">
-      <Filter>リソース ファイル</Filter>
-    </None>
     <None Include="manifest.xml" />
     <None Include="Noah.ico">
       <Filter>リソース ファイル</Filter>
@@ -130,9 +127,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="SubDlg.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="unacedef.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="kilib\kilib.h">

@@ -5,25 +5,25 @@
 #define AFX_KICMDPARSER_H__843A27E0_5DBF_48AF_A748_FA7F111F699A__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// kiCmdParser : コマンド文字列をchar*の配列に分割
+// kiCmdParser : splits a command string into a char* array
 
 class kiCmdParser
 {
-public: //-- 外向きインターフェイス --------------------------
+public: //-- Public interface --------------------------
 
-	// 文字列で初期化
+	// Initialize with string
 	kiCmdParser( char* cmd, bool ignoreFirst=false );
 	kiCmdParser( const char* cmd, bool ignoreFirst=false );
 
-	// スイッチ文字列の配列
+	// Array of switch strings
 	cCharArray& option()
 		{ return m_Switch; }
 
-	// スイッチ以外の文字列の配列
+	// Array of non-switch strings
 	cCharArray& param()
 		{ return m_Param; }
 
-private: //-- 内部処理 -----------------------------------
+private: //-- Internal processing -----------------------------------
 
 	void doit( char* start, bool ignoreFirst );
 	cCharArray m_Param;

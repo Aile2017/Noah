@@ -5,7 +5,7 @@
 #include "kilib.h"
 
 
-//------------------------ 2byte文字処理用 ----------------------//
+//------------------------ 2-byte character processing ----------------------//
 
 
 char kiStr::st_lb[256];
@@ -18,7 +18,7 @@ void kiStr::init()
 }
 
 
-//-------------------------- コピー系色々 ------------------------//
+//-------------------------- Various copy operations ------------------------//
 
 
 kiStr::kiStr( int start_size )
@@ -129,7 +129,7 @@ kiStr& kiStr::setInt( int n, bool cm )
 	return (*this);
 }
 
-//-------------------------- 文字列処理全般 ------------------------//
+//-------------------------- General string processing ------------------------//
 
 
 kiStr::~kiStr()
@@ -158,7 +158,7 @@ int kiStr::len() const
 }
 
 
-//-------------------------- ユーティリティー ------------------------//
+//-------------------------- Utilities ------------------------//
 
 
 kiStr& kiStr::removeTrailWS()
@@ -241,7 +241,8 @@ bool kiPath::beDirOnly()
 bool kiPath::isInSameDir(const char* q) const
 {
 	bool diff=false;
-	for( const char *p=m_pBuf; *p && *q; p=next(p), q=next(q) )
+	const char* p = m_pBuf;
+	for( ; *p && *q; p=next(p), q=next(q) )
 		if( *p != *q )
 			diff = true;
 		else if( diff && (*p=='\\' || *p=='/' || *q=='\\' || *q=='/') )
@@ -307,7 +308,7 @@ void kiPath::remove()
 void kiPath::getBody( kiStr& str ) const
 {
 	char *p=const_cast<char*>(name()),*x,c;
-	for( x=(*p=='.'?p+1:p); *x; x=next(x) ) // 先頭の.は拡張子と見なさない
+	for( x=(*p=='.'?p+1:p); *x; x=next(x) ) // Leading '.' is not treated as extension
 		if( *x=='.' )
 			break;
 	c=*x, *x='\0';
@@ -317,9 +318,9 @@ void kiPath::getBody( kiStr& str ) const
 
 void kiPath::getBody_all( kiStr& str ) const
 {
-// 最後の拡張子だけ削る版
+// Strip only the last extension
 	char *p=const_cast<char*>(name()),*x=NULL, *n, c;
-	for( n=(*p=='.'?p+1:p); *n; n=next(n) ) // 先頭の.は拡張子と見なさない
+	for( n=(*p=='.'?p+1:p); *n; n=next(n) ) // Leading '.' is not treated as extension
 		if( *n=='.' )
 			x = n;
 	if( !x )x = n;
@@ -333,7 +334,7 @@ void kiPath::getBody_all( kiStr& str ) const
 const char* kiPath::ext( const char* str )
 {
 	const char *ans = NULL, *p = name(str);
-	if( *p == '.' ) ++p; // 先頭の.は拡張子と見なさない
+	if( *p == '.' ) ++p; // Leading '.' is not treated as extension
 	for( ; *p; p=next(p) )
 		if( *p=='.' )
 			ans = p;
@@ -343,7 +344,7 @@ const char* kiPath::ext( const char* str )
 const char* kiPath::ext_all( const char* str )
 {
 	const char* p = name(str);
-	if( *p == '.' ) ++p; // 先頭の.は拡張子と見なさない
+	if( *p == '.' ) ++p; // Leading '.' is not treated as extension
 	for( ; *p; p=next(p) )
 		if( *p=='.' )
 			return (p+1);
@@ -371,8 +372,8 @@ UINT kiPath::getDriveType() const
 
 bool kiPath::endwithyen( const char* str )
 {
-	for( const char *p=str,*last=str; *p; p=next(p) )
+	const char* last = str;
+	for( const char* p=str; *p; p=next(p) )
 		last=p;
 	return ( *last=='\\' || *last=='/' );
 }
-

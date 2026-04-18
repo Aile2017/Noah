@@ -5,32 +5,32 @@
 #define AFX_KIWINCOMMON_H__0686721C_CAFB_4C2C_9FE5_0F482EA6A60B__INCLUDED_
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// シェルユーティリティークラス
+// Shell utility class
 
 class kiSUtil
 {
 public:
-	// カレントディレクトリ退避
+	// Save/restore current directory
 	static void switchCurDirToExeDir();
 
-	// 「フォルダの選択」ダイアログ
+	// "Select Folder" dialog
 	static bool getFolderDlg( char* buf, HWND par, const char* title, const char* def );
 	static void getFolderDlgOfEditBox( HWND wnd, HWND par, const char* title );
 
-	// 対応する拡張子用アイコンの、システムイメージリストのインデックスを返す。
+	// Return the system image list index for the icon of the given extension.
 	static int getSysIcon( const char* ext );
 
-	// 最後のエラーを表示
+	// Display last error
 	static void msgLastError( const char* msg = NULL );
 
-	// 自分へのショートカット作成
+	// Create a shortcut to self
 	static void createShortCut( const kiPath& at, const char* name );
 
-	// ファイルが存在する？
+	// Does the file exist?
 	static bool exist( const char* fname );
 	static bool isdir( const char* fname );
 
-	// カレントディレクトリを安全なところに移してLoadLibrary
+	// Move current directory to a safe location before LoadLibrary
 	static HMODULE loadLibrary(LPCTSTR lpFileName)
 	{
 		char original_cur[MAX_PATH], sys[MAX_PATH];

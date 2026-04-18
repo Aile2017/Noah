@@ -1,91 +1,75 @@
+For the terms of use of this source code, refer to the terms
+attached to the Noah binary. Basically, you are free to use it in any way.
 
-このソース群の利用条件については、Noahのバイナリの方に
-つけてある利用条件に従います。基本的には、どう使うのも自由。
-Visual C++ 6.0 Professional Edition / Visual C++ 2010 Express Edition 用です。
-
-
-☆ワークスペース等
-
- - Noah.sln			(VC++ 2010 用ワークスペース)
- - Noah.dsw			(VC++ 6.0 用ワークスペース)
-   - Noah.dsp		('Noah.exe' 用プロジェクト)
-   - stdafx.h/cpp	(pre-complied header生成用)
-   - NoahXt/
-     - NoahXt.dsp	('NoahXt.dll' 用プロジェクト)
-     - NoahXt.def	(ExportするAPI一覧)
-     - stdafx.h/cpp	(pre-complied header生成用)
-   - uninst/
-     - kinst.dsp	('uninst.exe' 用プロジェクト)
-     - stdafx.h/cpp	(pre-complied header生成用)
+This repository contains the current x64/MSVC version of Noah.
+It keeps the B2E-script-based external tool runner and removes the
+legacy integrated-archiver DLL interface.
 
 
-☆リソース
+== Workspace
 
-   - Noah.rc		(リソーススクリプト)
-   - resource.h		(リソースID定義ヘッダ)
-   - *.ico			(アイコンデータ)
+ - Noah.sln                 (Visual Studio solution)
+ - Noah.vcxproj             ('Noah.exe' project)
+ - stdafx.h/cpp             (for pre-compiled header generation)
 
 
-☆ソースコード
+== Resources
+
+   - Noah.rc                (resource script)
+   - Resource.h             (resource ID definition header)
+   - Noah.ico               (icon data)
+
+
+== Source code
 
  - /
-   - NoahApp.h|Noah.cpp	(Noahメインルーチン)
-   - NoahCM.h|cpp		(設定関係全般)
-   - NoahAM.h|cpp		(圧縮解凍処理の上位ルーチン)
-     - SubDlg.h|cpp		(書庫内容閲覧/パスワード/状況表示ダイアログ)
-     - Archiver.h|cpp	(圧縮解凍ルーチンのinterface)
-       - ArcDLL.h|cpp	(DLL利用ルーチン)
-       - ArcB2e.h|cpp	(B2Eスクリプト利用ルーチン)
-       - ArcACE.h|cpp	(UnaceV2.dll利用ルーチン)
-       - ArcMSC.h|cpp	(MS-Compress対応ルーチン)
-       - ArcCPT.h|cpp	(CompactPro対応ルーチン)
-
- - NoahXt/
-    - NoahXt.cpp	(関連付け・シェルエクステンション)
-
- - uninst/
-    - kinst.cpp		(インストーラ)
+   - NoahApp.h|Noah.cpp     (Noah main routine)
+   - NoahCM.h|cpp           (configuration loading, saving, and dialogs)
+   - NoahAM.h|cpp           (archive manager / dispatch)
+   - SubDlg.h|cpp           (archive viewer / password / progress dialogs)
+   - Archiver.h|cpp         (common archive operation interface and external command runner)
+   - ArcB2e.h|cpp           (B2E script support)
 
  - kilib/
-   - kilib.h		(K.I.LIBのメインヘッダ)
-   - kilibext.h		(K.I.LIBの拡張機能用ヘッダ)
-
-   - kl_app.h|cpp	(スタートアップポイント。アプリケーション全体の情報管理)
-   - kl_wnd.h|cpp	(ウインドウ、ダイアログ、プロパティシート管理)
-   - kl_reg.h|cpp	(レジストリ、iniファイルの入出力)
-   - kl_dnd.h|cpp	(OLEドラッグ＆ドロップ処理)
-   - kl_find.h|cpp	(ファイル検索)
-   - kl_wcmn.h|cpp	(主にWindows-Shell周りの便利関数群)
-
-   - kl_cmd.h|cpp	(コマンドラインパーサ)
-   - kl_str.h|cpp	(文字列処理＆パス文字列処理)
-   - kl_file.h|cpp	(ファイル入出力)
-   - kl_misc.h|cpp	(汎用クラス。配列のtemplateなど)
-
-   - kl_carc.h|cpp	(統合アーカイバDLLラッパ)
-   - kl_rythp.h|cpp	(Rythpスクリプト処理)
+   - kilib.h                (K.I.LIB main header)
+   - kilibext.h             (K.I.LIB extension features header)
+   - kl_app.h|cpp           (startup point and application-wide information)
+   - kl_wnd.h|cpp           (window, dialog, property sheet management)
+   - kl_reg.h|cpp           (registry and INI file I/O)
+   - kl_dnd.h|cpp           (OLE drag & drop processing)
+   - kl_find.h|cpp          (file search)
+   - kl_wcmn.h|cpp          (utility functions mainly for Windows Shell)
+   - kl_cmd.h|cpp           (command line parser)
+   - kl_str.h|cpp           (string and path processing)
+   - kl_file.h|cpp          (file I/O)
+   - kl_misc.h|cpp          (general-purpose classes)
+   - kl_rythp.h|cpp         (Rythp script processing used by B2E)
+   - kl_carc.h              (legacy integrated-archiver definitions kept only as historical reference)
 
 
-☆構成
+== Structure
 
  - CNoahApp : kiApp
-   - (ArcManやCnfManと連絡を取り、行う処理を決定する処理)
+   - determines what to do by communicating with ArcMan and CnfMan
 
-   - CNoahArchiveManager
-	 - (適切なCArchiverへ圧縮解凍を回す処理)
-	 - kiArray<CArchiver*>
+   - CNoahArchiverManager
+     - routes compression/extraction to the appropriate CArchiver
+     - kiArray<CArchiver*>
 
    - CNoahConfigManager
-	 - (ini読み書き処理やNoahXt.dllとの連携)
-	 - CNoahConfigDialog : kiPropSheet
-	   - CCmprPage : kiPropSheetPage
-	   - CInfoPage : kiPropSheetPage
-	   - CMeltPage : kiPropSheetPage
-	   - CWinXPage : kiPropSheetPage
+     - INI read/write processing and settings dialogs
+     - CNoahConfigDialog : kiPropSheet
+       - CCmprPage : kiPropSheetPage
+       - CInfoPage : kiPropSheetPage
+       - CMeltPage : kiPropSheetPage
 
  - CArchiver
-	 - (書庫操作用の共通インターフェイス)
-	 - (ここから各種解凍エンジン専用クラスが派生する)
+   - common interface for archive operations
+   - engine-specific classes are derived from here
+
+ - CArcB2e
+   - B2E-backed archiver implementation
+   - executes external archiver tools through B2E scripts
 
  - K.I.LIB
-	 - (汎用性の極めて低いWin32用ライブラリ)
+   - a very non-portable Win32-specific library

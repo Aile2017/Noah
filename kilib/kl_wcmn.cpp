@@ -26,7 +26,7 @@ static int CALLBACK __ki__ofp( HWND w, UINT m, LPARAM l, LPARAM d )
 
 bool kiSUtil::getFolderDlg( char* buf, HWND par, const char* title, const char* def )
 {
-	// ���Z�b�g
+	// Set info
 	BROWSEINFO bi;
 	ki_memzero( &bi, sizeof(bi) );
 	bi.hwndOwner      = par;
@@ -34,16 +34,16 @@ bool kiSUtil::getFolderDlg( char* buf, HWND par, const char* title, const char* 
 	bi.lpszTitle      = title;
 	bi.ulFlags        = BIF_RETURNONLYFSDIRS | BIF_DONTGOBELOWDOMAIN;
 	bi.lpfn           = __ki__ofp;
-	bi.lParam         = (LPARAM)def;
+	bi.lParam         = reinterpret_cast<LPARAM>(def);
 
-	// �_�C�A���O�\��
-	ITEMIDLIST* id = ::SHBrowseForFolder( &bi );
+	// Show dialog
+	LPITEMIDLIST id = ::SHBrowseForFolder( &bi );
 	if( id==NULL )
 		return false;
 	::SHGetPathFromIDList( id, buf );
 	app()->shellFree( id );
 
-	// �I��
+	// End
 	return true;
 }
 
@@ -51,7 +51,8 @@ void kiSUtil::getFolderDlgOfEditBox( HWND wnd, HWND par, const char* title )
 {
 	char str[MAX_PATH];
 	::SendMessage( wnd, WM_GETTEXT, MAX_PATH, (LPARAM)str );
-	for( char* x=str,*l=str; *x; x=kiStr::next(x) )
+	char* l = str;
+	for( char* x=str; *x; x=kiStr::next(x) )
 		l=x;
 	if( *l=='\\' || *l=='/' )
 		*l='\0';

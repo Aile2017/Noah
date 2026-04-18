@@ -33,24 +33,6 @@ public:
 		BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp );
 		void correct();
 	};
-	class CWinXPage : public kiPropSheetPage
-	{
-	public:
-		CWinXPage();
-	private:
-		BOOL onInit();
-		BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp );
-		bool onOK();
-	};
-	class CAssPage : public kiDialog
-	{
-	public:
-		CAssPage( HWND parent );
-	private:
-		BOOL onInit();
-		BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp );
-		bool onOK();
-	};
 	class CInfoPage : public kiPropSheetPage
 	{
 	public:
@@ -78,53 +60,50 @@ enum loading_flag
 	Mode    = 1,
 	Melt    = 2,
 	Compress= 4,
-	Shell   = 8,
 	OpenDir =16,
-	All     =31,
+	All     =23,
 };
 
 class CNoahConfigManager
 {
-public: //-- 操作
+public: //-- Operations
 
 	void init();
 	void load( loading_flag what );
 	void save();
 	void dialog();
 
-public: //-- 設定項目取得用インターフェイス
+public: //-- Interface for getting settings items
 
 	// Section: Mode
-	const int     mode()  { return m_Mode; }  // 0:圧専 1:圧優 2:解優 3:解専
-	const bool  miniboot(){ return m_MiniBoot; } // 最小化起動？
-	const bool  oldver()  { return m_OldVer; }// 古い形式でバージョン表示
-	const int   extnum()  { return m_OneExt ? 1 : m_ZeroExt ? 0 : -1; } // 書庫名作成時に拡張子と見なす部分
-	const int multiboot_limit() { return m_MbLim; } // 多重起動個数制限値
+	const int     mode()  { return m_Mode; }  // 0:compress-only 1:compress-preferred 2:extract-preferred 3:extract-only
+	const bool  miniboot(){ return m_MiniBoot; } // Start minimized?
+	const bool  oldver()  { return m_OldVer; }// Display version in old format
+	const int   extnum()  { return m_OneExt ? 1 : m_ZeroExt ? 0 : -1; } // Number of extensions to treat as part of archive name
+	const int multiboot_limit() { return m_MbLim; } // Multiple-instance limit
 	// Section: Melt
-	const kiPath& mdir()  { return m_MDir; }  // 解凍先
-	const bool    mdirsm(){ return m_MDirSm; }// 同じディレクトリに解凍？
-	const int     mkdir() { return m_MkDir; } // 0:x 1:file 2:dir 3:o
-	const bool    mnonum(){ return m_MNoNum; }// 数字省略
+	const kiPath& mdir()  { return m_MDir; }  // Extraction destination
+	const bool    mdirsm(){ return m_MDirSm; }// Extract to same directory?
+	const int     mkdir() { return m_MkDir; } // 0:no 1:file 2:dir 3:always
+	const bool    mnonum(){ return m_MNoNum; }// Omit numeric suffix
+	const char*   kill()  { return m_Kill; }  // Built-in routines to disable
 	// Section: Compress
-	const kiPath& cdir()  { return m_CDir; }  // 圧縮先
-	const bool    cdirsm(){ return m_CDirSm; }// 同じディレクトリに圧縮？
-	const kiStr&  cext()  { return m_CExt; }  // 圧縮形式
-	const kiStr&  cmhd()  { return m_CMhd; }  // 圧縮メソッド
-	// Section: Shell
+	const kiPath& cdir()  { return m_CDir; }  // Compression destination
+	const bool    cdirsm(){ return m_CDirSm; }// Compress to same directory?
+	const kiStr&  cext()  { return m_CExt; }  // Compression format
+	const kiStr&  cmhd()  { return m_CMhd; }  // Compression method
 	// Section: OpenDir
-	const bool    modir() { return m_MODir; } // 解凍後開く？
-	const bool    codir() { return m_CODir; } // 圧縮後開く？
-	const kiStr&  openby(){ return m_OpenBy; }// 開くプログラム(隠し)
+	const bool    modir() { return m_MODir; } // Open folder after extraction?
+	const bool    codir() { return m_CODir; } // Open folder after compression?
+	const kiStr&  openby(){ return m_OpenBy; }// Program to open folder (hidden)
 
-private: //-- 内部変数
+private: //-- Internal variables
 
 	unsigned long m_Loaded;
 	kiIniFile m_Ini;
 	kiStr m_UserName;
-	HINSTANCE m_hNoahXtDLL;
-	enum { NOSHL, NOADMIN, SHLOK } m_bShlOK;
 
-	// 設定項目
+	// Settings items
 	int    m_Mode;
 	kiPath m_MDir, m_CDir;
 	bool   m_MODir,m_CODir,m_MDirSm,m_CDirSm;
@@ -134,30 +113,17 @@ private: //-- 内部変数
 	kiStr  m_OpenBy;
 	kiStr  m_CMhd;
 	bool   m_MNoNum;
-	bool   m_SCSendTo,m_SCDesktop;
-	bool   m_SECmp, m_SEExt;
+	kiStr  m_Kill;
 	bool   m_MiniBoot;
 	bool   m_OldVer;
 	bool   m_OneExt, m_ZeroExt;
 
-	// 関数ロード
-	FARPROC getProc( const char* name );
-
 public:
-	CNoahConfigManager()
-		{
-			m_hNoahXtDLL = NULL;
-		}
-	~CNoahConfigManager()
-		{
-			if( m_hNoahXtDLL )
-				::FreeLibrary( m_hNoahXtDLL );
-		}
+	CNoahConfigManager() {}
+
 friend class CNoahConfigDialog::CCmprPage;
 friend class CNoahConfigDialog::CMeltPage;
-friend class CNoahConfigDialog::CWinXPage;
 friend class CNoahConfigDialog::CInfoPage;
-friend class CNoahConfigDialog::CAssPage;
 };
 
 #endif

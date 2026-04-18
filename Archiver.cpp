@@ -29,14 +29,14 @@ CArcModule::CArcModule( const char* name, bool us )
 
 int CArcModule::cmd( const char* cmd, bool mini )
 {
-	// NT���ǂ����̃`�F�b�N��
+	// Check NT etc.
 	kiPath tmpdir;
 	static const bool isNT =
 		(app()->osver().dwPlatformId==VER_PLATFORM_WIN32_NT);
 	static const char* const closeShell =
 		(isNT ? "cmd.exe /c " : "command.com /c ");
 
-	// �R�}���h������쐬
+	// Build command string
 	kiVar theCmd( m_name );
 	theCmd.quote();
 	theCmd += ' ';
@@ -44,19 +44,19 @@ int CArcModule::cmd( const char* cmd, bool mini )
 
 	if( m_type==SHLCMD )
 	{
-		// �V�F���R�}���h�̏ꍇ
+		// Shell command case
 		theCmd = closeShell + theCmd;
 	}
 	else if( m_type==EXEUS )
 	{
-		// US���[�h�̏ꍇ
+		// US mode case
 		if( isNT )
 		{
 			::SetEnvironmentVariable( "NOAHCMD", theCmd );
 			theCmd = "%NOAHCMD%";
 		}
 
-		// �ؑփo�b�`�t�@�C������
+		// Generate switch batch file
 		myapp().get_tempdir(tmpdir);
 		kiPath batname(tmpdir);
 		batname += "ncmd.bat";
@@ -70,7 +70,7 @@ int CArcModule::cmd( const char* cmd, bool mini )
 		theCmd += batname;
 	}
 
-	// �v���Z�X�J�n
+	// Start process
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si={sizeof(STARTUPINFO)};
 	si.dwFlags    =STARTF_USESHOWWINDOW;
@@ -80,7 +80,7 @@ int CArcModule::cmd( const char* cmd, bool mini )
 		NULL,NULL, &si,&pi ) )
 		return 0xffff;
 
-	// �I���ҋ@
+	// Wait for exit
 	::CloseHandle( pi.hThread );
 	while( WAIT_OBJECT_0 != ::WaitForSingleObject( pi.hProcess, 500 ) )
 		kiWindow::msg();
@@ -88,7 +88,7 @@ int CArcModule::cmd( const char* cmd, bool mini )
 	::GetExitCodeProcess( pi.hProcess, (DWORD*)&ex );
 	::CloseHandle( pi.hProcess );
 
-	// ��n��
+	// Cleanup
 	if( m_type==EXEUS )
 		tmpdir.remove();
 	return ex;
@@ -96,11 +96,11 @@ int CArcModule::cmd( const char* cmd, bool mini )
 
 void CArcModule::ver( kiStr& str )
 {
-	// �o�[�W�������𐮌`���ĕ\��
+	// Format and display version info
 	char *verstr="----", buf[200];
 	if( m_type != NOTEXIST )
 	{
-		// �\�Ȃ烊�\�[�X����̎擾�����݂�
+		// Try to get from resource if possible
 		if( CArchiver::GetVersionInfoStr( m_name, buf, sizeof(buf) ) )
 			verstr = buf;
 		else
@@ -124,27 +124,27 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 {
 	files.forcelen(0);
 
-	// ��ƕϐ�
+	// Working variables
 	const int BLLEN = ki_strlen(BL);
 	const int ELLEN = ki_strlen(EL);
 	int /*ct=0,*/ step=BSL;
 
-	// EXE�ȊO�̂��̂ł̓_��
+	// Non-EXE types are not supported here
 	if( m_type!=EXE && m_type!=EXEUS )
 		return false;
 
-	// �R�}���h������쐬
+	// Build command string
 	kiVar theCmd( m_name );
 	theCmd.quote();
 	theCmd += ' ';
 	theCmd += lstcmd;
 
-	// �p�C�v�쐬�i�����Ƃ��p��ON�BDupHan����̖ʓ|���̂Łc(^^;�j
+	// Create pipe (both inherit. Too much hassle to DupHandle...)
 	HANDLE rp, wp;
 	SECURITY_ATTRIBUTES sa = {sizeof(SECURITY_ATTRIBUTES),NULL,TRUE};
 	::CreatePipe( &rp, &wp, &sa, 4096 );
 
-	// �v���Z�X�J�n
+	// Start process
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si = {sizeof(STARTUPINFO)};
 	si.dwFlags     = STARTF_USESHOWWINDOW|STARTF_USESTDHANDLES;
@@ -156,7 +156,7 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 			NULL, NULL, &si,&pi );
 	::CloseHandle( wp );
 
-	// ���s������p�C�v����đ��I��
+	// On failure, close pipe and exit immediately
 	if( !ok )
 	{
 		::CloseHandle( rp );
@@ -164,54 +164,55 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 	}
 	::CloseHandle( pi.hThread );
 
-	// ��͍��etc(�o�b�t�@�̃T�C�Y�̓p�C�v�̃T�C�Y�̔{�ȏ�łȂ��Ă͂Ȃ�Ȃ�)
+	// Parsing etc. (buffer must be at least 2x the pipe size)
 	char buf[8192], *end=buf;
 	for( bool endpr=false; !endpr; )
 	{
-		// �I���ҋ@
+		// Wait
 		endpr = (WAIT_OBJECT_0==::WaitForSingleObject(pi.hProcess,500));
 		kiWindow::msg();
 
-		// �p�C�v����ǂ݂Ƃ�
+		// Read from pipe
 		DWORD red;
 		::PeekNamedPipe( rp, NULL, 0, NULL, &red, NULL );
 		if( red==0 )
 			continue;
-		::ReadFile( rp, end, buf+sizeof(buf)-end, &red, NULL );
+		const DWORD cbAvail = static_cast<DWORD>((buf+sizeof(buf))-end);
+		::ReadFile( rp, end, cbAvail, &red, NULL );
 		end += red;
 
-		// �s�ɕ���
+		// Split into lines
 		char *lss=buf;
 		for( char *ls, *le=buf; le<end; ++le )
 		{
-			// �s����T��
+			// Find end of line
 			for( lss=ls=le; le<end; ++le )
 				if( *le=='\n' )
 					break;
 			if( le==end )
 				break;
 
-			// �擪�s�X�L�b�v����
+			// Skip header line processing
 			if( *BL )
 			{
 				if( BLLEN<=le-ls && ki_memcmp(BL,ls,BLLEN) )
 					BL = "";
 			}
-			// �s�X�e�b�v����
+			// Line step processing
 			else if( --step<=0 )
 			{
 				step = SL;
 
-				// �I�[�s����
+				// End-of-data line processing
 				if( ELLEN==0 )
 					{ if( le-ls<=1 ) break; }
 				else if( ELLEN<=le-ls && ki_memcmp(EL,ls,ELLEN) )
 					break;
 
-				// �����X�L�b�v����
+				// Character skip processing
 				if( dx>=0 )
 					ls += dx;
-				// �����u���b�N�X�L�b�v����
+				// Argument block skip processing
 				else
 				{
 					for( ;ls<le;++ls )
@@ -227,7 +228,7 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 								break;
 					}
 				}
-				// �t�@�C�����R�s�[
+				// Copy filename
 				if( ls<le )
 				{
 					arcfile af; ki_memzero(&af, sizeof(af));
@@ -269,21 +270,21 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 				}
 			}
 		}
-		// �o�b�t�@�V�t�g
+		// Buffer shift
 		if( lss != buf )
 			ki_memmov( buf, lss, end-lss ), end=buf+(end-lss);
 		else if( end==buf+sizeof(buf) )
 			end = buf;
 	}
 
-	// ���I��
+	// Done
 	::CloseHandle( pi.hProcess );
 	::CloseHandle( rp );
 	return true;
 }
 
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*/
-// �o�[�W������񃊃\�[�X�擾
+// Get version info resource
 
 bool CArchiver::GetVersionInfoStr( char* name, char* buf, size_t cbBuf )
 {
@@ -303,7 +304,7 @@ bool CArchiver::GetVersionInfoStr( char* name, char* buf, size_t cbBuf )
 		WORD* tr = NULL;
 		UINT cbTr = 0;
 
-		// �ŏ��Ɍ���������ƃR�[�h�y�[�W�ŏ��擾
+		// Get info using the first found language and code page
 		if( ::VerQueryValue( vbuf,
 			"\\VarFileInfo\\Translation", (void**)&tr, &cbTr )
 		 && cbTr >= 4 )
@@ -318,7 +319,8 @@ bool CArchiver::GetVersionInfoStr( char* name, char* buf, size_t cbBuf )
 			if( ::VerQueryValue( vbuf, blockname, (void**)&inf, &cbInf )
 			 && cbInf < cbBuf-1 )
 			{
-				for( char* v=buf; *inf && cbInf; ++inf,--cbInf )
+				char* v = buf;
+				for( ; *inf && cbInf; ++inf,--cbInf )
 					if( *inf != ' ' )
 						*v++ = (*inf==',' ? '.' : *inf);
 				*v = '\0';

@@ -5,7 +5,7 @@
 #include "kilib.h"
 
 
-//-------- Window・ｽ・ｽ・ｽ・ｬ・ｽ・ｽ・ｽ・ｽ HWND ・ｽ・ｽ kiWindow* ・ｽ・ｽ・ｽZ・ｽb・ｽg・ｽ・ｽ・ｽ驍ｽ・ｽﾟの擾ｿｽ・ｽ・ｽ -------//
+//-------- Processing to store kiWindow* in HWND at window creation -------//
 
 
 kiWindow* kiWindow::st_pCurInit = NULL;
@@ -13,13 +13,13 @@ kiWindow* kiWindow::st_pCurInit = NULL;
 
 void kiWindow::init()
 {
-	// CreateWindow ・ｽp・ｽt・ｽb・ｽN・ｽﾝ置
+	// Set hook for CreateWindow
 	st_hHook = ::SetWindowsHookEx( WH_CBT, &CBTProc, NULL, ::GetCurrentThreadId() );
 }
 
 void kiWindow::finish()
 {
-	// CreateWindow ・ｽp・ｽt・ｽb・ｽN・ｽ・ｽ・ｽ・ｽ
+	// Remove hook for CreateWindow
 	::UnhookWindowsHookEx( st_hHook );
 }
 
@@ -29,7 +29,7 @@ LRESULT CALLBACK kiWindow::CBTProc( int code, WPARAM wp, LPARAM lp )
 	{
 		if( st_pCurInit )
 		{
-			// k.i.lib ・ｽﾌウ・ｽC・ｽ・ｽ・ｽh・ｽE・ｽ・ｽ CreateWindow ・ｽ・ｽ・ｽ黷ｽ・ｽ鼾・
+			// When a k.i.lib window is created via CreateWindow
 			st_pCurInit->setHwnd( (HWND)wp );
 			::SetWindowLongPtr( (HWND)wp, GWLP_USERDATA, (LONG_PTR)st_pCurInit );
 			st_pCurInit = NULL;
@@ -50,7 +50,7 @@ void kiWindow::detachHwnd()
 }
 
 
-//------------ Window ・ｽﾉまつゑｿｽ・ｽG・ｽg・ｽZ・ｽg・ｽ・ｽ・ｽﾈ擾ｿｽ・ｽ・ｽ (static) ---------------//
+//------------ Miscellaneous static window utility processing ---------------//
 
 
 bool kiWindow::loopbreaker = false;
@@ -86,7 +86,7 @@ void kiWindow::setFront( HWND wnd )
 {
 	const OSVERSIONINFO& v = app()->osver();
 
-	// Win2000 ・ｽﾈ擾ｿｽ or Win98 ・ｽﾈ擾ｿｽ
+	// Win2000 or later, or Win98 or later
 	if( ( v.dwPlatformId==VER_PLATFORM_WIN32_NT && v.dwMajorVersion>=5 )
 	 || ( v.dwPlatformId==VER_PLATFORM_WIN32_WINDOWS &&
 							v.dwMajorVersion*100+v.dwMinorVersion>=410 ) )
@@ -99,7 +99,7 @@ void kiWindow::setFront( HWND wnd )
 		::AttachThreadInput( th2, th1, FALSE );
 		::BringWindowToTop( wnd );
 	}
-	else  // ・ｽﾃゑｿｽWin
+	else  // Old Windows
 		::SetForegroundWindow( wnd );
 
 	// Special Thanks To kazubon !! ( the author of TClock )
@@ -122,7 +122,7 @@ void kiWindow::setCenter( HWND wnd, HWND rel )
 }
 
 
-//------------------ Window・ｽx・ｽ[・ｽX・ｽN・ｽ・ｽ・ｽX・ｽﾆゑｿｽ・ｽﾄの擾ｿｽ・ｽ・ｽ ----------------------//
+//------------------ Processing as Window base class ----------------------//
 
 
 kiWindow::kiWindow()
@@ -147,9 +147,9 @@ void kiWindow::loadAccel( UINT id )
 }
 
 
-//---------------- ・ｽX・ｽ^・ｽ・ｽ・ｽh・ｽA・ｽ・ｽ・ｽ・ｽ・ｽ・ｽWindow・ｽﾌ擾ｿｽ・ｽ・ｽ ---------------------//
+//---------------- Standalone window processing ---------------------//
 
-// ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽc
+// ...incomplete...
 
 //---------------------------- Dialog -----------------------------//
 
@@ -192,15 +192,15 @@ void kiDialog::end( UINT endcode )
 
 INT_PTR kiDialog::commonDlg( HWND dlg, UINT msg, WPARAM wp, LPARAM lp )
 {
-	// kiDialog ・ｽC・ｽ・ｽ・ｽ^・ｽ[・ｽt・ｽF・ｽC・ｽX・ｽﾖのポ・ｽC・ｽ・ｽ・ｽ^・ｽ・ｽ・ｽ謫ｾ
+	// Get pointer to kiDialog interface
 	kiDialog* ptr = (kiDialog*)::GetWindowLongPtr( dlg, GWLP_USERDATA );
 	if( !ptr ) return FALSE;
 
-	// WM_INITDIALOG ・ｽﾈゑｿｽ onInit ・ｽ・ｽ・ｽﾄゑｿｽ
+	// Call onInit if WM_INITDIALOG
 	if( msg == WM_INITDIALOG )
 		return ptr->onInit();
 
-	// OK / Cancel ・ｽ・ｽ・ｽ・ｽ
+	// OK / Cancel processing
 	else if( msg == WM_COMMAND )
 	{
 		switch( LOWORD(wp) )
@@ -216,10 +216,10 @@ INT_PTR kiDialog::commonDlg( HWND dlg, UINT msg, WPARAM wp, LPARAM lp )
 		}
 	}
 
-	// ・ｽ・ｽ・ｽﾊの・ｿｽ・ｽb・ｽZ・ｽ[・ｽW
+	// Ordinary message
 	BOOL ans = ptr->proc( msg, wp, lp );
 
-	// WM_DESTORY ・ｽﾈゑｿｽE・ｽC・ｽ・ｽ・ｽh・ｽE・ｽn・ｽ・ｽ・ｽh・ｽ・ｽ・ｽﾘり離・ｽ・ｽ
+	// Detach window handle on WM_DESTROY
 	if( msg == WM_DESTROY )
 		ptr->detachHwnd();
 
@@ -282,19 +282,19 @@ void kiPropSheet::createModeless( HWND parent )
 
 void kiPropSheet::end( UINT endcode )
 {
-	// ・ｽI・ｽ・ｽ・ｽR・ｽ[・ｽh・ｽZ・ｽb・ｽg
+	// Set exit code
 	setEndCode( endcode );
 
-	// ・ｽT・ｽu・ｽN・ｽ・ｽ・ｽX・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Remove subclassing
 	::SetWindowLongPtr( hwnd(), GWLP_WNDPROC, (LONG_PTR)m_DefProc );
 
-	// ・ｽI・ｽ・ｽ
-	if( isModal() ) // ・ｽT・ｽu・ｽN・ｽ・ｽ・ｽX・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽﾌで、・ｽﾄ度 end ・ｽ・ｽ・ｽﾄばゑｿｽ驍ｱ・ｽﾆはなゑｿｽ・ｽﾍゑｿｽ・ｽB
+	// End
+	if( isModal() ) // Subclassing is removed, so end() should not be called again.
 		::PostMessage( hwnd(), WM_COMMAND, IDCANCEL, 0 );
 	else
 		::DestroyWindow( hwnd() );
 
-	// WM_DESTROY・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾌ難ｿｽ・ｽ・ｽ
+	// Behavior equivalent to WM_DESTROY
 	detachHwnd();
 }
 
@@ -304,14 +304,14 @@ LRESULT CALLBACK kiPropSheet::main_cmmnProc( HWND dlg, UINT msg, WPARAM wp, LPAR
 	if( !ptr )
 		return 0;
 
-	// ・ｽﾜゑｿｽ・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽﾌ擾ｿｽ・ｽ・ｽ
+	// First, default processing
 	LRESULT result = ::CallWindowProc( ptr->m_DefProc, dlg, msg, wp, lp );
 
-	// ・ｽ~・ｽ{・ｽ^・ｽ・ｽ・ｽﾍキ・ｽ・ｽ・ｽ・ｽ・ｽZ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Close button treated as Cancel
 	if( msg==WM_SYSCOMMAND && wp==SC_CLOSE )
 		::PostMessage( dlg, WM_COMMAND, IDCANCEL, 0 );
 
-	// ・ｽR・ｽ}・ｽ・ｽ・ｽh・ｽ・ｽ・ｽ・ｽ
+	// Command processing
 	else if( msg==WM_COMMAND )
 	{
 		switch( LOWORD(wp) )
@@ -336,7 +336,7 @@ LRESULT CALLBACK kiPropSheet::main_cmmnProc( HWND dlg, UINT msg, WPARAM wp, LPAR
 		}
 	}
 
-	// ・ｽh・ｽ・ｽ・ｽb・ｽO・ｽ・ｽ・ｽh・ｽ・ｽ・ｽb・ｽv
+	// Drag & drop
 	else if( msg==WM_DROPFILES )
 		ptr->onDrop( (HDROP)wp );
 
@@ -361,10 +361,10 @@ int CALLBACK kiPropSheet::main_initProc( HWND dlg, UINT msg, LPARAM lp )
 {
 	if( msg == PSCB_PRECREATE )
 	{
-		// ・ｽX・ｽ^・ｽC・ｽ・ｽ・ｽ・ｽ・ｽw・ｽ・ｽDWORD・ｽﾌア・ｽh・ｽ・ｽ・ｽX・ｽ・ｽ・ｽ謫ｾ
+		// Get address of the DWORD for window style
 		DWORD* pst = ( 0xffff==((DLGTEMPLATEEX*)lp)->signature ) ? 
 						&(((DLGTEMPLATEEX*)lp)->style) : &(((DLGTEMPLATE*)lp)->style);
-		// ・ｽw・ｽ・ｽ・ｽv・ｽ{・ｽ^・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄ最擾ｿｽ・ｽ・ｽ・ｽ{・ｽ^・ｽ・ｽ・ｽ・ｽt・ｽ・ｽ・ｽ・ｽ
+		// Remove help button and add minimize button
 		(*pst) &= ~DS_CONTEXTHELP;
 		(*pst) |=  WS_MINIMIZEBOX;
 
@@ -372,15 +372,15 @@ int CALLBACK kiPropSheet::main_initProc( HWND dlg, UINT msg, LPARAM lp )
     }
 	else if( msg == PSCB_INITIALIZED )
 	{
-		// ・ｽ・ｽ・ｽﾌゑｿｽ・ｽo・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾜゑｿｽ・ｽ]・ｽv・ｽﾈ・ｿｽ・ｽj・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽ尞・
+		// Remove extra menu that gets created for some reason
 		HMENU sysm = ::GetSystemMenu( dlg, FALSE );
 		::DeleteMenu( sysm, SC_SIZE, MF_BYCOMMAND );
 		::DeleteMenu( sysm, SC_MAXIMIZE, MF_BYCOMMAND );
 
-		// ・ｽN・ｽ・ｽ・ｽ・ｽ・ｽﾍウ・ｽC・ｽ・ｽ・ｽh・ｽE・ｽ・ｽK・ｽ・ｽ・ｽO・ｽﾊゑｿｽ
+		// Always bring window to front at startup
 		setFront( dlg );
 
-		//・ｽT・ｽu・ｽN・ｽ・ｽ・ｽX・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+		// Subclass the window
 		st_CurInitPS->m_DefProc = (WNDPROC)::SetWindowLongPtr( dlg, GWLP_WNDPROC, (LONG_PTR)main_cmmnProc );
 		st_CurInitPS->onInit();
 	}
@@ -393,7 +393,7 @@ INT_PTR kiPropSheet::page_cmmnProc( HWND dlg, UINT msg, WPARAM wp, LPARAM lp )
 	if( !ptr )
 		return FALSE;
 
-	// ・ｽ・ｽ・ｽ・ｽ・ｽﾅ、・ｽ・ｽ・ｽﾊ擾ｿｽ・ｽ・ｽ
+	// Common processing here
 	switch( msg )
 	{
 	case WM_INITDIALOG:
