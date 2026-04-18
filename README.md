@@ -90,6 +90,8 @@ Noah/
 
 Settings are stored in `Noah.ini` in the same folder as the executable, under a section named after the Windows user account. The file is created automatically on first save.
 
+The following keys are recognized by Noah. Some are written out on save, while others remain implicit unless you add them manually.
+
 | Key | Default | Description |
 |---|---|---|
 | `Mode` | `2` | Operating mode: `0`=compress only / `1`=compress preferred / `2`=extract preferred / `3`=extract only |
@@ -101,9 +103,11 @@ Settings are stored in `Noah.ini` in the same folder as the executable, under a 
 | `CMhd` | `7-zip` | Default compression method passed to the archiver |
 | `CODir` | `1` | Open destination folder after compression (`1`=yes, `0`=no) |
 | `MiniBoot` | `0` | Start minimized (`1`=yes) |
+| `OldAbout` | `0` | Use the old About-version display format; disables ProductVersion resource lookup (`1`=yes) |
 | `OneExt` | `0` | Treat only the last extension as part of the archive name (`1`=yes) |
 | `NoExt` | `0` | Treat no extension as part of the archive name, i.e. always strip (`1`=yes) |
 | `MultiBootLimit` | `4` | Maximum number of simultaneous Noah instances |
+| `OpenBy` | Windows Explorer command | Command template used when opening a folder after compression or extraction. `%s` is replaced with the target path |
 
 ---
 
