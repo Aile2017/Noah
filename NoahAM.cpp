@@ -179,22 +179,6 @@ bool CNoahArchiverManager::map_compressor( const char* ext, const char* method, 
 	return (m_Method != -1);
 }
 
-//----------------------------------------------//
-//------------ Version info string ------------//
-//----------------------------------------------//
-
-void CNoahArchiverManager::get_version( kiStr& str )
-{
-	kiStr tmp;
-	for( unsigned int i=0; i!=m_AList.len(); i++ )
-		if( m_AList[i]->ver( tmp ) )
-			str+=tmp, str+="\r\n";
-}
-
-//----------------------------------------------//
-//--------------- Compression format list ---------------//
-//----------------------------------------------//
-
 static unsigned int find( const cCharArray& x, const char* o )
 {
 	for( unsigned int i=0; i!=x.len(); i++ )
@@ -210,6 +194,54 @@ static unsigned int find( const StrArray& x, const char* o )
 			return i;
 	return 0xffffffff;
 }
+
+static void append_unique_version_lines( StrArray& lines, const char* text )
+{
+	kiStr line;
+	for( const char* p=text; ; ++p )
+	{
+		if( *p=='\r' || *p=='\n' || *p=='\0' )
+		{
+			if( line.len()!=0 && 0xffffffff==find(lines, line) )
+				lines.add( line );
+			line = "";
+
+			if( *p=='\r' && p[1]=='\n' )
+				++p;
+			if( *p=='\0' )
+				break;
+		}
+		else
+			line += *p;
+	}
+}
+
+//----------------------------------------------//
+//------------ Version info string ------------//
+//----------------------------------------------//
+
+void CNoahArchiverManager::get_version( kiStr& str )
+{
+	StrArray lines;
+	kiStr tmp;
+	for( unsigned int i=0; i!=m_AList.len(); i++ )
+	{
+		tmp = "";
+		if( m_AList[i]->ver( tmp ) )
+			append_unique_version_lines( lines, tmp );
+	}
+
+	for( unsigned int i=0; i!=lines.len(); i++ )
+	{
+		if( i!=0 )
+			str += "\r\n";
+		str += lines[i];
+	}
+}
+
+//----------------------------------------------//
+//--------------- Compression format list ---------------//
+//----------------------------------------------//
 
 void CNoahArchiverManager::get_cmpmethod(
 		const char* set,
