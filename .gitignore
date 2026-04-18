@@ -1,9 +1,11 @@
 # Build output
 obj/
 Debug/
-Release/
 Debug_*/
 Release_*/
+
+# Release folder: track b2e scripts, exclude the executable
+Release/Noah.exe
 
 # Object and dependency files
 *.o
