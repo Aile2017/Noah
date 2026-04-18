@@ -89,59 +89,59 @@ BEGIN
     LTEXT           "",IDC_STATUSBAR,0,144,350,11
 END
 
-IDD_CMPCFG DIALOG DISCARDABLE  0, 0, 219, 121
+IDD_CMPCFG DIALOG DISCARDABLE  0, 0, 229, 121
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Compress"
 FONT 9, "Segoe UI"
 BEGIN
-    GROUPBOX        "Destination Folder",IDC_STATIC,7,7,205,43
-    CONTROL         "Source's Folder",IDC_DDIR1,"Button",BS_AUTORADIOBUTTON |
+    GROUPBOX        "Destination Folder",IDC_STATIC,7,7,215,43
+    CONTROL         "Source Folder",IDC_DDIR1,"Button",BS_AUTORADIOBUTTON |
                     WS_GROUP,11,20,122,10
     CONTROL         "",IDC_DDIR2,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,11,
                     33,8,10
-    EDITTEXT        IDC_DDIR,23,32,167,12,ES_AUTOHSCROLL | WS_GROUP
-    PUSHBUTTON      "...",IDC_REF,194,31,13,14,WS_GROUP
-    CONTROL         "Open",IDC_ODIR,"Button",BS_AUTOCHECKBOX | WS_GROUP |
-                    WS_TABSTOP,163,18,43,9
+    EDITTEXT        IDC_DDIR,23,32,177,12,ES_AUTOHSCROLL | WS_GROUP
+    PUSHBUTTON      "...",IDC_REF,204,31,13,14,WS_GROUP
+    CONTROL         "Open folder",IDC_ODIR,"Button",BS_AUTOCHECKBOX | WS_GROUP |
+                    WS_TABSTOP,150,18,65,9
     GROUPBOX        "Method",IDC_STATIC,7,57,117,57
     COMBOBOX        IDC_CMPEXT,13,81,33,163,CBS_DROPDOWNLIST | CBS_SORT |
                     CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_GROUP |
                     WS_TABSTOP
     COMBOBOX        IDC_CMPMHD,49,81,66,79,CBS_DROPDOWNLIST |
                     CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Which-To-Do",IDC_STATIC,133,57,79,57
+    GROUPBOX        "Operation",IDC_STATIC,133,57,89,57
     CONTROL         "Compress Only",IDC_MODE1,"Button",BS_AUTORADIOBUTTON |
-                    WS_GROUP,145,69,61,10
-    CONTROL         "mode-1",IDC_MODE2,"Button",BS_AUTORADIOBUTTON,145,79,59,
+                    WS_GROUP,145,69,71,10
+    CONTROL         "Auto (Compress)",IDC_MODE2,"Button",BS_AUTORADIOBUTTON,145,79,69,
                     10
-    CONTROL         "mode-2",IDC_MODE3,"Button",BS_AUTORADIOBUTTON |
-                    WS_TABSTOP,145,89,60,10
+    CONTROL         "Auto (Extract)",IDC_MODE3,"Button",BS_AUTORADIOBUTTON |
+                    WS_TABSTOP,145,89,70,10
     CONTROL         "Extract Only",IDC_MODE4,"Button",BS_AUTORADIOBUTTON,145,
-                    99,60,10
+                    99,70,10
 END
 
-IDD_MLTCFG DIALOG DISCARDABLE  0, 0, 219, 121
+IDD_MLTCFG DIALOG DISCARDABLE  0, 0, 229, 121
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Extract"
 FONT 9, "Segoe UI"
 BEGIN
-    GROUPBOX        "Destination Folder",IDC_STATIC,7,7,205,43
-    CONTROL         "Archive's Folder",IDC_DDIR1,"Button",BS_AUTORADIOBUTTON |
+    GROUPBOX        "Destination Folder",IDC_STATIC,7,7,215,43
+    CONTROL         "Archive Folder",IDC_DDIR1,"Button",BS_AUTORADIOBUTTON |
                     WS_GROUP,11,20,126,10
     CONTROL         "",IDC_DDIR2,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,11,
                     33,10,8
-    EDITTEXT        IDC_DDIR,23,32,167,12,ES_AUTOHSCROLL | WS_GROUP
-    PUSHBUTTON      "...",IDC_REF,194,31,13,14,WS_GROUP
-    CONTROL         "Open",IDC_ODIR,"Button",BS_AUTOCHECKBOX | WS_GROUP |
-                    WS_TABSTOP,163,18,42,10
-    GROUPBOX        "",IDC_STATIC,7,52,205,62
+    EDITTEXT        IDC_DDIR,23,32,177,12,ES_AUTOHSCROLL | WS_GROUP
+    PUSHBUTTON      "...",IDC_REF,204,31,13,14,WS_GROUP
+    CONTROL         "Open folder",IDC_ODIR,"Button",BS_AUTOCHECKBOX | WS_GROUP |
+                    WS_TABSTOP,150,18,65,10
+    GROUPBOX        "",IDC_STATIC,7,52,215,62
     CONTROL         "Create Directory",IDC_MKDIR,"Button",BS_AUTOCHECKBOX |
                     WS_GROUP | WS_TABSTOP,16,62,183,10
-    CONTROL         "Not create when only 1 file is contained",IDC_MKDIR1,
+    CONTROL         "Skip if archive contains only 1 file",IDC_MKDIR1,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,32,73,170,10
-    CONTROL         "Not create when only 1 folder is contained",IDC_MKDIR2,
+    CONTROL         "Skip if archive contains only 1 folder",IDC_MKDIR2,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,32,84,173,10
-    CONTROL         "Omit trail numbers",IDC_MKDIR3,"Button",BS_AUTOCHECKBOX |
+    CONTROL         "Omit trailing numbers",IDC_MKDIR3,"Button",BS_AUTOCHECKBOX |
                     WS_TABSTOP,32,95,169,10
 END
 
@@ -175,7 +175,7 @@ STYLE DS_ABSALIGN | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP |
 CAPTION "Noah"
 FONT 9, "Segoe UI"
 BEGIN
-    LTEXT           "Input your password:",IDC_MESSAGE,4,5,196,20
+    LTEXT           "Enter password:",IDC_MESSAGE,4,5,196,20
     EDITTEXT        IDC_EDIT,7,29,194,12,ES_AUTOHSCROLL
     CONTROL         "Mask",IDC_MASK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,
                     47,31,10
@@ -201,7 +201,7 @@ BEGIN
     IDD_CMPCFG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 212
+        RIGHTMARGIN, 222
         TOPMARGIN, 7
         BOTTOMMARGIN, 114
     END
@@ -209,7 +209,7 @@ BEGIN
     IDD_MLTCFG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 212
+        RIGHTMARGIN, 222
         TOPMARGIN, 7
         BOTTOMMARGIN, 114
     END
@@ -268,7 +268,7 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    IDS_M_ERROR             "Can't extract !\nIt's a non-archive file or a broken archive."
+    IDS_M_ERROR             "Can't extract!\nThis is not a recognized archive file or the archive is corrupted."
     IDS_C_ERROR             "Unsupported compression format or method !\nNo matching B2E archiver is available."
     IDS_CHOOSEDIR           "Choose a destination folder."
     IDS_FNAME               "NAME"
@@ -277,8 +277,8 @@ BEGIN
     IDS_RATIO               "RATIO"
     IDS_METHOD              "METHOD"
     IDS_PATH                "PATH"
-    IDS_EXECUTING           "Application launched from Noah is living. Do you really want to close?"
-    IDS_NOLIST              "Error: Can't ListUp The Contents of this Archive."
+    IDS_EXECUTING           "An application launched by Noah is still running. Do you really want to close?"
+    IDS_NOLIST              "Error: Cannot list the contents of this archive."
     IDS_ARCVIEW_MSG         "[%d files] [Ratio: %d%%] [%s]"
 END
 
