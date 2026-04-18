@@ -25,4 +25,4 @@ decode1:
  (xcmd 7zG.exe x -y (arc) (list))
 
 list:
- (xscan "------------------" 1 "------------------" 1 53 7z.exe l (arc))
+ (xscan "-----------" 1 "-----------" 1 42 Rar.exe l (arc))
