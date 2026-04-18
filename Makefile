@@ -80,22 +80,22 @@ $(PCH_FILE) $(INTDIR)\stdafx.obj: stdafx.cpp stdafx.h
     $(CC) $(CFLAGS) /Yc"$(PCH_HDR)" stdafx.cpp
 
 # Source files using precompiled header
-$(INTDIR)\ArcB2e.obj: ArcB2e.cpp $(PCH_FILE)
+$(INTDIR)\ArcB2e.obj: ArcB2e.cpp ArcB2e.h Archiver.h $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" ArcB2e.cpp
 
-$(INTDIR)\Archiver.obj: Archiver.cpp $(PCH_FILE)
+$(INTDIR)\Archiver.obj: Archiver.cpp Archiver.h $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" Archiver.cpp
 
 $(INTDIR)\Noah.obj: Noah.cpp $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" Noah.cpp
 
-$(INTDIR)\NoahAM.obj: NoahAM.cpp $(PCH_FILE)
+$(INTDIR)\NoahAM.obj: NoahAM.cpp NoahAM.h Archiver.h $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" NoahAM.cpp
 
 $(INTDIR)\NoahCM.obj: NoahCM.cpp $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" NoahCM.cpp
 
-$(INTDIR)\SubDlg.obj: SubDlg.cpp $(PCH_FILE)
+$(INTDIR)\SubDlg.obj: SubDlg.cpp SubDlg.h Archiver.h $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" SubDlg.cpp
 
 $(INTDIR)\kl_app.obj: kilib\kl_app.cpp $(PCH_FILE)
