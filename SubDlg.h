@@ -10,7 +10,7 @@ class CArcViewDlg : public kiDialog, kiDataObject
 public:
 	CArcViewDlg( CArchiver* ptr,arcname& fnm,const kiPath& ddir )
 		: kiDialog( IDD_ARCVIEW ), m_pArc( ptr ),
-		m_fname( fnm ), m_ddir( ddir )
+		m_fname( fnm ), m_ddir( ddir ), m_hFont( NULL )
 		{
 			AddRef();
 			myapp().get_tempdir( m_tdir );
@@ -45,6 +45,7 @@ private: //-- Processing as dialog
 		}
 	int hlp_cnt_check();
 	bool m_bAble;
+	HFONT m_hFont;
 
 private: //-- Drag & drop processing
 

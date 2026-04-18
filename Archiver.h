@@ -21,6 +21,7 @@ struct arcname {
 
 struct arcfile {
 	INDIVIDUALINFO inf;
+	char rawline[256];
 	union {
 		bool selected;
 		bool isfile;

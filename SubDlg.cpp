@@ -7,18 +7,14 @@ int CArcViewDlg::st_nLife;
 
 BOOL CArcViewDlg::onInit()
 {
-	char cstr[100];
 	kiStr str;
 	kiPath path;
 	SHFILEINFO sfi,lfi;
 	HIMAGELIST hImS,hImL;
 	kiListView ctrl( this, IDC_FILELIST );
-	__int64 filesize_sum = 0;
 
 	//-- Mark that one dialog has been created
 	hello();
-	m_bSmallFirst[0] = m_bSmallFirst[1] = m_bSmallFirst[2] =
-	m_bSmallFirst[3] = m_bSmallFirst[4] = m_bSmallFirst[5] = true;
 
 	//-- Center and bring to front
 	setCenter( hwnd(), app()->mainhwnd() );
@@ -37,6 +33,20 @@ BOOL CArcViewDlg::onInit()
 	//-- Extraction destination
 	sendMsgToItem( IDC_DDIR, WM_SETTEXT, 0, (LPARAM)(const char*)m_ddir );
 
+	//-- Monospace font for raw archiver output
+	{
+		LOGFONT lf;
+		::GetObject( (HFONT)sendMsg(WM_GETFONT), sizeof(lf), &lf );
+		lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+		lf.lfCharSet = DEFAULT_CHARSET;
+		ki_strcpy( lf.lfFaceName, "Consolas" );
+		m_hFont = ::CreateFontIndirect( &lf );
+	}
+	::SendMessage( item(IDC_FILELIST), WM_SETFONT, (WPARAM)m_hFont, TRUE );
+	HWND hHeader = (HWND)sendMsgToItem( IDC_FILELIST, LVM_GETHEADER, 0, 0 );
+	if( hHeader )
+		::SendMessage( hHeader, WM_SETFONT, (WPARAM)m_hFont, TRUE );
+
 	//-- List
 	if( !m_pArc->list( m_fname, m_files ) || m_files.len()==0 )
 	{
@@ -48,73 +58,13 @@ BOOL CArcViewDlg::onInit()
 	{
 		m_bAble = ( 0 != (m_pArc->ability() & aMeltEach) );
 
-		ctrl.setImageList( hImL, hImS );
-		ctrl.insertColumn( 0, str.loadRsrc(IDS_FNAME),   110 );
-		ctrl.insertColumn( 1, str.loadRsrc(IDS_SIZE),    70,  LVCFMT_RIGHT );
-		ctrl.insertColumn( 2, str.loadRsrc(IDS_DATETIME),100, LVCFMT_RIGHT );
-		ctrl.insertColumn( 3, str.loadRsrc(IDS_RATIO),   55,  LVCFMT_RIGHT );
-		ctrl.insertColumn( 4, str.loadRsrc(IDS_METHOD),  50,  LVCFMT_RIGHT );
-		ctrl.insertColumn( 5, str.loadRsrc(IDS_PATH),    130 );
+		// Single column; header text shows the 7z output field layout
+		ctrl.insertColumn( 0,
+			"   Date      Time    Attr         Size   Compressed  Name", 800 );
 
-		FILETIME ftm;
-		SYSTEMTIME stm;
-
-		//-- Item
-		for( unsigned int i=0,k=0; i!=m_files.len(); i++ )
+		for( unsigned int i=0, k=0; i!=m_files.len(); i++ )
 			if( m_files[i].isfile )
-			{
-#define			usiz (m_files[i].inf.dwOriginalSize)
-#define			csiz (m_files[i].inf.dwCompressedSize)
-#define			method (m_files[i].inf.szMode)
-#define			date (m_files[i].inf.wDate)
-#define			time (m_files[i].inf.wTime)
-				path = m_files[i].inf.szFileName;
-
-				// Filename
-				ctrl.insertItem( k, path.name(),
-					(LPARAM)(&m_files[i]), kiSUtil::getSysIcon(path.ext()) );
-
-				// Size
-				if( usiz == 0xffffffff )
-					ctrl.setSubItem( k, 1, "????" );
-				else
-					ctrl.setSubItem( k, 1, str.setInt( usiz,true ) );
-
-				// Time
-				if( ::DosDateTimeToFileTime( date, time, &ftm )
-				 && ::FileTimeToSystemTime( &ftm, &stm ) )
-				{
-					*cstr=0;
-					::GetDateFormat( LOCALE_USER_DEFAULT, 0, &stm,
-									 "yy/MM/dd", cstr, sizeof(cstr) );
-					str=cstr;
-					::GetTimeFormat( LOCALE_USER_DEFAULT, 0, &stm,
-									 " HH:mm", cstr, sizeof(cstr) );
-					str+=cstr;
-					ctrl.setSubItem( k, 2, str );
-				}
-
-				// Compression ratio
-				filesize_sum += usiz;
-				if( usiz==0 )		ctrl.setSubItem( k, 3, "100%" );
-				else if( csiz==0 )	ctrl.setSubItem( k, 3, "????" );
-				else				ctrl.setSubItem( k, 3, str.setInt( (int)(((__int64)csiz)*100/usiz) )+='%' );
-
-				// Method
-				ctrl.setSubItem( k, 4, method );
-
-				// Path
-				path.beDirOnly();
-				ctrl.setSubItem( k, 5, path );
-
-				k++;
-
-#undef			usiz
-#undef			csiz
-#undef			method
-#undef			date
-#undef			time
-			}
+				ctrl.insertItem( k++, m_files[i].rawline, (LPARAM)(&m_files[i]) );
 
 		//-- Register drag & drop format
 		FORMATETC fmt;
@@ -129,11 +79,9 @@ BOOL CArcViewDlg::onInit()
 	//-- Info --
 	char tmp[255];
 	kiStr full_filename = m_fname.basedir + m_fname.lname;
-	__int64 filesize_arc = kiFile::getSize64(full_filename);
-	if( filesize_sum==0 ) filesize_sum = 1;
 	wsprintf( tmp, kiStr().loadRsrc(IDS_ARCVIEW_MSG),
 		m_files.len(),
-		(int)(filesize_arc*100 / filesize_sum),
+		0,
 		(const char*)m_pArc->arctype_name(full_filename)
 	);
 	sendMsgToItem( IDC_STATUSBAR, WM_SETTEXT, 0, (LPARAM)tmp );
@@ -169,6 +117,7 @@ bool CArcViewDlg::onCancel()
 	}
 
 	kiListView(this,IDC_FILELIST).setImageList( NULL, NULL );
+	if( m_hFont ) { ::DeleteObject(m_hFont); m_hFont=NULL; }
 	byebye();
 	return true;
 }
@@ -296,8 +245,6 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 					kiDropSource::DnD( this, DROPEFFECT_COPY );
 				return TRUE;
 			}
-			else if( phdr->code==LVN_COLUMNCLICK )
-				DoSort( ((NMLISTVIEW*)lp)->iSubItem );
 			else if( phdr->code==NM_DBLCLK )
 				sendMsg( WM_COMMAND, IDC_SHOW );
 			else if( phdr->code==NM_RCLICK )

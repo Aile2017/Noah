@@ -210,6 +210,7 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 					break;
 
 				// Character skip processing
+				const char* ls_raw = ls;
 				if( dx>=0 )
 					ls += dx;
 				// Argument block skip processing
@@ -233,6 +234,15 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 				{
 					arcfile af; ki_memzero(&af, sizeof(af));
 					af.inf.dwOriginalSize = 0xffffffff;
+
+					// Raw display line (full line before dx skip)
+					{
+						int rn = 0;
+						const char* p = ls_raw;
+						while( rn < (int)sizeof(af.rawline)-1 && p < le && *p != '\r' && *p != '\n' )
+							af.rawline[rn++] = *p++;
+						af.rawline[rn] = '\0';
+					}
 //					ki_memzero( &files[ct].inf, sizeof(files[ct].inf) );
 //					files[ct].inf.dwOriginalSize = 0xffffffff;
 
