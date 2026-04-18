@@ -109,7 +109,7 @@ Settings are stored in `Noah.ini` in the same folder as the executable, under a 
 
 ## License
 
-Basically free to use in any way. See `ReadMe.txt` for the original terms.
+Basically free to use in any way. See `docs\ReadMe.txt` for the original terms.
 
 ---
 
