@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noah - Help</title>
+<style>
+  body { font-family: sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1em; line-height: 1.6; color: #222; }
+  h1   { border-bottom: 2px solid #555; padding-bottom: 0.3em; }
+  h2   { border-bottom: 1px solid #aaa; padding-bottom: 0.2em; margin-top: 2em; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+  th, td { border: 1px solid #ccc; padding: 0.4em 0.8em; text-align: left; }
+  th { background: #f0f0f0; }
+  code { background: #f4f4f4; padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.95em; }
+  pre  { background: #f4f4f4; padding: 0.8em 1em; border-radius: 4px; overflow-x: auto; }
+  hr   { border: none; border-top: 1px solid #ddd; margin: 2em 0; }
+  a    { color: #0066cc; }
+</style>
+</head>
+<body>
+
+<h1>Noah</h1>
+<p>A lightweight Windows drag-and-drop archiver frontend (version 3.199).</p>
+<p>Drop files onto Noah to compress them, or drop an archive onto Noah to extract it.<br>
+Noah itself has no built-in archive engine — it delegates all archive operations to external tools via <strong>B2E scripts</strong> placed in the <code>b2e\</code> subdirectory.</p>
+
+<hr>
+
+<h2>Features</h2>
+<ul>
+  <li><strong>Drag &amp; Drop operation</strong> — drop files/folders to compress, drop an archive to extract</li>
+  <li><strong>Auto mode selection</strong> — automatically detects whether to compress or extract based on what is dropped and the current mode setting</li>
+  <li><strong>B2E script engine</strong> — supports any archive format for which a B2E script and the corresponding external tool (e.g. 7-Zip, zip, tar …) are available</li>
+  <li><strong>Archive viewer</strong> — list archive contents before extracting; supports password entry</li>
+  <li><strong>Configurable extraction destination</strong> — fixed folder, same folder as source, or prompted each time</li>
+  <li><strong>Subdirectory creation control</strong> — choose when to create a folder for extracted files (never / single file / multiple files / always)</li>
+  <li><strong>Multiple instance limit</strong> — prevents too many simultaneous archive operations</li>
+  <li><strong>Minimized start option</strong> — launch in the system tray / taskbar</li>
+</ul>
+
+<hr>
+
+<h2>Modes</h2>
+<p>Noah has four operating modes (configurable in Settings):</p>
+<table>
+  <tr><th>Mode</th><th>Behavior</th></tr>
+  <tr><td>0 — Compress only</td><td>Always compresses dropped items</td></tr>
+  <tr><td>1 — Compress preferred</td><td>Compresses unless the drop target is clearly an archive</td></tr>
+  <tr><td>2 — Extract preferred <em>(default)</em></td><td>Extracts archives; compresses other files</td></tr>
+  <tr><td>3 — Extract only</td><td>Always extracts dropped items</td></tr>
+</table>
+
+<hr>
+
+<h2>Requirements</h2>
+<ul>
+  <li>Windows 10 / 11 (x64)</li>
+  <li>One or more B2E scripts and their corresponding archive tools in the <code>b2e\</code> subdirectory</li>
+</ul>
+
+<hr>
+
+<h2>Credits</h2>
+<h3>Application Icon</h3>
+<p><a href="https://icon-icons.com/icon/archiver/37045">Archiver - free Icon in PNG and SVG</a> by <a href="https://icon-icons.com/">icon-icons.com</a>, used under free for commercial use license.</p>
+
+</body>
+</html>

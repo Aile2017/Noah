@@ -149,14 +149,14 @@ void CNoahConfigDialog::onHelp()
 {
 	kiPath exepos( kiPath::Exe );
 
-	//-- Open manual.htm from the same directory as the exe
-	kiPath hlp(exepos); hlp+="manual.htm";
+	//-- Open Noah.html from the same directory as the exe
+	kiPath hlp(exepos); hlp+="Noah.html";
 	if( kiSUtil::exist(hlp) )
 		::ShellExecute( hwnd(), NULL, hlp, NULL, NULL, SW_MAXIMIZE );
 	else
 	{
-		//-- Fall back to readme.txt
-		hlp=exepos; hlp+="readme.txt";
+		//-- Fall back to Noah.txt
+		hlp=exepos; hlp+="Noah.txt";
 		if( kiSUtil::exist(hlp) )
 			::ShellExecute( hwnd(), NULL, hlp, NULL, NULL, SW_SHOWDEFAULT );
 	}

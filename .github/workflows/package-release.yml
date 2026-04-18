@@ -90,9 +90,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path pkg | Out-Null
-          Copy-Item built\Noah.exe  pkg\Noah.exe
-          Copy-Item Release\b2e     pkg\b2e -Recurse
-          Copy-Item README.md       pkg\README.md
+          Copy-Item built\Noah.exe   pkg\Noah.exe
+          Copy-Item Release\b2e      pkg\b2e -Recurse
+          Copy-Item Release\Noah.html pkg\Noah.html
+          Copy-Item README.md        pkg\README.md
           Write-Host "Package contents:"
           Get-ChildItem pkg -Recurse | Format-Table FullName, Length
 
@@ -119,9 +120,10 @@ jobs:
 
             | File | Description |
             |------|-------------|
-            | `Noah.exe` | Executable (MSVC x64) |
-            | `b2e/`     | B2E scripts for supported archive formats |
-            | `README.md` | Overview and usage |
+            | `Noah.exe`   | Executable (MSVC x64) |
+            | `b2e/`       | B2E scripts for supported archive formats |
+            | `Noah.html`  | Help file |
+            | `README.md`  | Overview and usage |
           files: ${{ steps.tag.outputs.zipname }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
