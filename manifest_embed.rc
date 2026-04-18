@@ -1,0 +1,2 @@
+// Embed application manifest (ComCtl v6, DPI awareness)
+1 RT_MANIFEST "manifest.xml"

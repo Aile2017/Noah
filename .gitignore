@@ -1,0 +1,29 @@
+# Build output
+obj/
+Debug/
+Release/
+Debug_*/
+Release_*/
+
+# Object and dependency files
+*.o
+*.obj
+*.res.o
+
+# Compiled resources (MSVC)
+*.res
+
+# Debug symbols
+*.pdb
+*.ilk
+
+# Executables
+*.exe
+
+# Exceptions: keep source RC and manifest
+!Noah.rc
+!manifest.xml
+!manifest_embed.rc
+
+# Claude Code local settings
+.claude/settings.local.json

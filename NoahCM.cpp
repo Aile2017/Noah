@@ -5,6 +5,7 @@
 #include "resource.h"
 #include "NoahApp.h"
 #include "NoahCM.h"
+#include <algorithm>
 
 //----------------------------------------------//
 //------------- INI file setup etc. ------------//
@@ -39,7 +40,7 @@ void CNoahConfigManager::load( loading_flag what )
 		m_MiniBoot = m_Ini.getBool( "MiniBoot", false );
 		m_OneExt   = m_Ini.getBool( "OneExt", false );
 		m_ZeroExt  = m_Ini.getBool( "NoExt", false );
-		m_MbLim    = max( 1, m_Ini.getInt( "MultiBootLimit", 4 ) );
+		m_MbLim    = (std::max)( 1, m_Ini.getInt( "MultiBootLimit", 4 ) );
 		m_OldVer   = m_Ini.getBool( "OldAbout", false );
 	}
 	if( (what & Melt) && !(m_Loaded & Melt) ) //----------- Extraction

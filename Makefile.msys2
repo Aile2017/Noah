@@ -1,0 +1,140 @@
+# Makefile.msys2 - GNU Make for MSYS2 toolchains
+#
+# Usage (run from MSYS2 shell or with full path to make):
+#   make -f Makefile.msys2                          # ucrt64 Release (default)
+#   make -f Makefile.msys2 TOOLCHAIN=mingw64        # GCC + MSVCRT
+#   make -f Makefile.msys2 TOOLCHAIN=ucrt64         # GCC + UCRT
+#   make -f Makefile.msys2 TOOLCHAIN=clang64        # Clang/LLVM + UCRT
+#   make -f Makefile.msys2 CFG=Debug                # Debug build
+#   make -f Makefile.msys2 TOOLCHAIN=clang64 CFG=Debug
+#   make -f Makefile.msys2 clean
+
+TOOLCHAIN ?= ucrt64
+CFG       ?= Release
+
+MSYS2  := /c/usr/msys64
+BINDIR := $(MSYS2)/$(TOOLCHAIN)/bin
+
+ifeq ($(TOOLCHAIN),clang64)
+  CXX := $(BINDIR)/clang++.exe
+else
+  CXX := $(BINDIR)/g++.exe
+endif
+
+WINDRES := $(BINDIR)/windres.exe
+TARGET  := Noah.exe
+OUTDIR  := $(CFG)_$(TOOLCHAIN)
+INTDIR  := obj/$(CFG)_$(TOOLCHAIN)
+
+# MSYS2 toolchains use GNU/Itanium C++ ABI; kilib_startUp() mangles to _Z13kilib_startUpv
+ENTRY_SYMBOL := _Z13kilib_startUpv
+
+# Windows libs (no CRT startup libs - we use a custom entry point)
+WIN_LIBS := -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 \
+            -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid \
+            -lodbc32 -lodbccp32 -lcomctl32 -llz32 -lversion
+
+# Flags common to all toolchains
+COMMON_FLAGS := \
+    -nostdlib -m64 -I. \
+    -DWIN32 -D_WINDOWS -D_MBCS \
+    -Wno-main -Wno-unknown-pragmas \
+    -ffunction-sections -fdata-sections \
+    -fomit-frame-pointer -mno-stack-arg-probe \
+    -fno-stack-check -fno-stack-protector \
+    -fno-exceptions -fno-rtti \
+    -fno-threadsafe-statics -fno-use-cxa-atexit \
+    -fno-asynchronous-unwind-tables \
+    -fno-ident
+
+# GCC-specific size flags
+GCC_FLAGS := \
+    -fno-use-cxa-get-exception-ptr \
+    -fno-enforce-eh-specs \
+    -fnothrow-opt \
+    -fno-extern-tls-init \
+    -fno-delete-null-pointer-checks \
+    -fno-optional-diags \
+    -flto -fuse-linker-plugin -flto-partition=none
+
+# Clang-specific flags
+CLANG_FLAGS := \
+    -Wno-unused-command-line-argument \
+    -Wno-implicit-exception-spec-mismatch \
+    -fno-access-control \
+    -flto
+
+ifeq ($(TOOLCHAIN),clang64)
+  EXTRA_FLAGS := $(CLANG_FLAGS)
+else
+  EXTRA_FLAGS := $(GCC_FLAGS)
+endif
+
+ifeq ($(CFG),Debug)
+  CXXFLAGS := $(COMMON_FLAGS) $(EXTRA_FLAGS) -O0 -g -D_DEBUG
+  LDFLAGS  :=
+else
+  CXXFLAGS := $(COMMON_FLAGS) $(EXTRA_FLAGS) -Os -DNDEBUG
+  LDFLAGS  := \
+    -Wl,--gc-sections \
+    -Wl,-dynamicbase,-nxcompat,--no-seh \
+    -Wl,--disable-runtime-pseudo-reloc \
+    -Wl,--tsaware,-s -s
+endif
+
+# With -nostdlib we must explicitly list the C runtime
+LIBS := -nostdlib -lmsvcrt $(WIN_LIBS)
+
+ifeq ($(TOOLCHAIN),clang64)
+  LIBS += -fuse-linker-plugin
+else
+  LIBS += -flto -fuse-linker-plugin -flto-partition=none
+endif
+
+SRCS := \
+    stdafx.cpp \
+    ArcB2e.cpp \
+    Archiver.cpp \
+    Noah.cpp \
+    NoahAM.cpp \
+    NoahCM.cpp \
+    SubDlg.cpp \
+    kilib/kl_app.cpp \
+    kilib/kl_cmd.cpp \
+    kilib/kl_dnd.cpp \
+    kilib/kl_file.cpp \
+    kilib/kl_find.cpp \
+    kilib/kl_reg.cpp \
+    kilib/kl_rythp.cpp \
+    kilib/kl_str.cpp \
+    kilib/kl_wcmn.cpp \
+    kilib/kl_wnd.cpp
+
+OBJS         := $(patsubst %.cpp,$(INTDIR)/%.o,$(SRCS))
+RES          := $(INTDIR)/Noah.res.o
+MANIFEST_RES := $(INTDIR)/manifest_embed.res.o
+
+OBJ_DIRS := $(sort $(dir $(OBJS)))
+
+.PHONY: all clean
+
+all: $(OUTDIR)/$(TARGET)
+
+$(OUTDIR)/$(TARGET): $(OBJS) $(RES) $(MANIFEST_RES) | $(OUTDIR)
+	$(CXX) -m64 -mwindows $(LDFLAGS) -Wl,-e,$(ENTRY_SYMBOL) \
+	    -o $@ $(OBJS) $(RES) $(MANIFEST_RES) $(LIBS)
+
+$(INTDIR)/%.o: %.cpp | $(OBJ_DIRS)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(RES): Noah.rc Resource.h Noah.ico | $(INTDIR)
+	$(WINDRES) -F pe-x86-64 -O coff -o $@ Noah.rc
+
+$(MANIFEST_RES): manifest_embed.rc manifest.xml | $(INTDIR)
+	$(WINDRES) -F pe-x86-64 -O coff -o $@ manifest_embed.rc
+
+$(OUTDIR) $(OBJ_DIRS):
+	mkdir -p $@
+
+clean:
+	rm -rf obj/$(CFG)_$(TOOLCHAIN) $(OUTDIR)/$(TARGET)

@@ -18,7 +18,7 @@ __int64 kiFile::getSize64( const char* fname )
 	low = ::GetFileSize( h, &hi );
 	::CloseHandle( h );
 
-	return (__int64(hi)<<32) | low;
+	return ((__int64)hi<<32) | low;
 }
 
 unsigned long kiFile::getSize( const char* fname, unsigned long err )

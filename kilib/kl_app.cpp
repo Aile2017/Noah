@@ -50,14 +50,40 @@ void* operator new( size_t siz )
 	return (void*)::GlobalAlloc( GMEM_FIXED, siz );
 }
 
+void* operator new[]( size_t siz )
+{
+	return (void*)::GlobalAlloc( GMEM_FIXED, siz );
+}
+
 void operator delete( void* ptr )
 {
 	::GlobalFree( (HGLOBAL)ptr );
 }
 
-void main()
+void operator delete( void* ptr, size_t )
 {
-	// Dummy main to avoid libc.lib link error that occurs without it
+	::GlobalFree( (HGLOBAL)ptr );
+}
+
+void operator delete[]( void* ptr )
+{
+	::GlobalFree( (HGLOBAL)ptr );
+}
+
+void operator delete[]( void* ptr, size_t )
+{
+	::GlobalFree( (HGLOBAL)ptr );
+}
+
+extern "C" void __cxa_pure_virtual()
+{
+	::ExitProcess( 1 );
+}
+
+int main()
+{
+	// Dummy main to avoid linker error when building without /ENTRY
+	return 0;
 }
 
 //--------------------------------------------------------------//
