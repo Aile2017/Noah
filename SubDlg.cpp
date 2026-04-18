@@ -5,6 +5,35 @@
 
 int CArcViewDlg::st_nLife;
 
+// Subclass proc for the ListView header: gray background + 1px separator line
+static LRESULT CALLBACK HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+	WNDPROC oldProc = (WNDPROC)::GetProp(hwnd, "NHdrProc");
+	if( msg == WM_ERASEBKGND )
+	{
+		HDC hdc = (HDC)wp;
+		RECT rc; ::GetClientRect(hwnd, &rc);
+		HBRUSH br = ::CreateSolidBrush(::GetSysColor(COLOR_BTNFACE));
+		::FillRect(hdc, &rc, br);
+		::DeleteObject(br);
+		return TRUE;
+	}
+	LRESULT r = ::CallWindowProc(oldProc, hwnd, msg, wp, lp);
+	if( msg == WM_PAINT )
+	{
+		RECT rc; ::GetClientRect(hwnd, &rc);
+		HDC hdc = ::GetDC(hwnd);
+		HPEN pen = ::CreatePen(PS_SOLID, 1, ::GetSysColor(COLOR_BTNSHADOW));
+		HPEN oldPen = (HPEN)::SelectObject(hdc, pen);
+		::MoveToEx(hdc, 0, rc.bottom - 1, NULL);
+		::LineTo(hdc, rc.right, rc.bottom - 1);
+		::SelectObject(hdc, oldPen);
+		::DeleteObject(pen);
+		::ReleaseDC(hwnd, hdc);
+	}
+	return r;
+}
+
 BOOL CArcViewDlg::onInit()
 {
 	kiStr str;
@@ -30,8 +59,13 @@ BOOL CArcViewDlg::onInit()
 	//-- Title
 	sendMsg( WM_SETTEXT, 0, (LPARAM)kiPath(m_fname.lname).name() );
 
-	//-- Extraction destination
-	sendMsgToItem( IDC_DDIR, WM_SETTEXT, 0, (LPARAM)(const char*)m_ddir );
+	//-- Extraction destination (display as long path even if m_ddir is short path)
+	{
+		char longdir[MAX_PATH];
+		const char* disp = (::GetLongPathName((const char*)m_ddir, longdir, MAX_PATH) > 0)
+			? longdir : (const char*)m_ddir;
+		sendMsgToItem( IDC_DDIR, WM_SETTEXT, 0, (LPARAM)disp );
+	}
 
 	//-- Monospace font for raw archiver output
 	{
@@ -43,9 +77,26 @@ BOOL CArcViewDlg::onInit()
 		m_hFont = ::CreateFontIndirect( &lf );
 	}
 	::SendMessage( item(IDC_FILELIST), WM_SETFONT, (WPARAM)m_hFont, TRUE );
-	HWND hHeader = (HWND)sendMsgToItem( IDC_FILELIST, LVM_GETHEADER, 0, 0 );
-	if( hHeader )
-		::SendMessage( hHeader, WM_SETFONT, (WPARAM)m_hFont, TRUE );
+	m_hHeader = (HWND)sendMsgToItem( IDC_FILELIST, LVM_GETHEADER, 0, 0 );
+	if( m_hHeader )
+	{
+		::SendMessage( m_hHeader, WM_SETFONT, (WPARAM)m_hFont, TRUE );
+
+		// Disable visual styles on the header → classic gray (COLOR_BTNFACE) background
+		typedef HRESULT (WINAPI *FnSWT)(HWND, LPCWSTR, LPCWSTR);
+		HMODULE hUx = ::LoadLibrary("uxtheme.dll");
+		if( hUx )
+		{
+			FnSWT pfn = (FnSWT)::GetProcAddress(hUx, "SetWindowTheme");
+			if( pfn ) pfn(m_hHeader, L"", L"");
+			::FreeLibrary(hUx);
+		}
+
+		// Subclass to add WM_ERASEBKGND (gray fill) and WM_PAINT (separator line)
+		WNDPROC old = (WNDPROC)(LONG_PTR)::GetWindowLongPtr(m_hHeader, GWLP_WNDPROC);
+		::SetProp(m_hHeader, "NHdrProc", (HANDLE)old);
+		::SetWindowLongPtr(m_hHeader, GWLP_WNDPROC, (LONG_PTR)HeaderSubclassProc);
+	}
 
 	//-- List
 	if( !m_pArc->list( m_fname, m_files ) || m_files.len()==0 )
@@ -58,11 +109,17 @@ BOOL CArcViewDlg::onInit()
 	{
 		m_bAble = ( 0 != (m_pArc->ability() & aMeltEach) );
 
-		// Single column; header text shows the 7z output field layout
-		ctrl.insertColumn( 0,
-			"   Date      Time    Attr         Size   Compressed  Name", 800 );
+		// First entry is the column header captured from archiver output (isfile=false)
+		const char* colHeader = "";
+		unsigned int dataStart = 0;
+		if( m_files.len() > 0 && !m_files[0].isfile )
+		{
+			colHeader = m_files[0].rawline;
+			dataStart = 1;
+		}
+		ctrl.insertColumn( 0, colHeader, 800 );
 
-		for( unsigned int i=0, k=0; i!=m_files.len(); i++ )
+		for( unsigned int i=dataStart, k=0; i!=m_files.len(); i++ )
 			if( m_files[i].isfile )
 				ctrl.insertItem( k++, m_files[i].rawline, (LPARAM)(&m_files[i]) );
 
@@ -79,8 +136,11 @@ BOOL CArcViewDlg::onInit()
 	//-- Info --
 	char tmp[255];
 	kiStr full_filename = m_fname.basedir + m_fname.lname;
+	unsigned int fileCount = 0;
+	for( unsigned int i=0; i!=m_files.len(); i++ )
+		if( m_files[i].isfile ) fileCount++;
 	wsprintf( tmp, kiStr().loadRsrc(IDS_ARCVIEW_MSG),
-		m_files.len(),
+		fileCount,
 		0,
 		(const char*)m_pArc->arctype_name(full_filename)
 	);
@@ -117,6 +177,13 @@ bool CArcViewDlg::onCancel()
 	}
 
 	kiListView(this,IDC_FILELIST).setImageList( NULL, NULL );
+	if( m_hHeader )
+	{
+		WNDPROC old = (WNDPROC)::GetProp(m_hHeader, "NHdrProc");
+		if( old ) ::SetWindowLongPtr(m_hHeader, GWLP_WNDPROC, (LONG_PTR)old);
+		::RemoveProp(m_hHeader, "NHdrProc");
+		m_hHeader = NULL;
+	}
 	if( m_hFont ) { ::DeleteObject(m_hFont); m_hFont=NULL; }
 	byebye();
 	return true;

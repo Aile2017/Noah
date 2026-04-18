@@ -166,6 +166,7 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 
 	// Parsing etc. (buffer must be at least 2x the pipe size)
 	char buf[8192], *end=buf;
+	char header_line[256] = "";  // last non-empty pre-separator line (used as column header)
 	for( bool endpr=false; !endpr; )
 	{
 		// Wait
@@ -196,7 +197,23 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 			if( *BL )
 			{
 				if( BLLEN<=le-ls && ki_memcmp(BL,ls,BLLEN) )
+				{
+					// Separator found: store header_line as the first arcfile entry
+					arcfile hdr; ki_memzero(&hdr, sizeof(hdr));
+					hdr.isfile = false;
+					ki_strcpy( hdr.rawline, header_line );
+					files.add( hdr );
 					BL = "";
+				}
+				else if( le-ls > 1 )
+				{
+					// Non-empty, non-separator line: keep as candidate column header
+					int rn = 0;
+					const char* p = ls;
+					while( rn < (int)sizeof(header_line)-1 && p < le && *p != '\r' && *p != '\n' )
+						header_line[rn++] = *p++;
+					header_line[rn] = '\0';
+				}
 			}
 			// Line step processing
 			else if( --step<=0 )

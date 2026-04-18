@@ -89,7 +89,7 @@ $(INTDIR)\Archiver.obj: Archiver.cpp Archiver.h $(PCH_FILE)
 $(INTDIR)\Noah.obj: Noah.cpp $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" Noah.cpp
 
-$(INTDIR)\NoahAM.obj: NoahAM.cpp NoahAM.h Archiver.h $(PCH_FILE)
+$(INTDIR)\NoahAM.obj: NoahAM.cpp NoahAM.h Archiver.h SubDlg.h $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" NoahAM.cpp
 
 $(INTDIR)\NoahCM.obj: NoahCM.cpp $(PCH_FILE)

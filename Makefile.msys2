@@ -130,7 +130,7 @@ $(INTDIR)/%.o: %.cpp | $(OBJ_DIRS)
 # Extra header dependencies (Archiver.h is not in the PCH)
 $(INTDIR)/ArcB2e.o:   ArcB2e.h Archiver.h
 $(INTDIR)/Archiver.o: Archiver.h
-$(INTDIR)/NoahAM.o:   NoahAM.h Archiver.h
+$(INTDIR)/NoahAM.o:   NoahAM.h Archiver.h SubDlg.h
 $(INTDIR)/SubDlg.o:   SubDlg.h Archiver.h
 
 $(RES): Noah.rc Resource.h Noah.ico | $(INTDIR)
