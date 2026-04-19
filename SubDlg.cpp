@@ -160,10 +160,8 @@ BOOL CArcViewDlg::onInit()
 			if( m_files[i].isfile )
 			{
 				m_fileIndices.add( i );
-				SHFILEINFO fi; ::ZeroMemory( &fi, sizeof(fi) );
-				::SHGetFileInfo( m_files[i].inf.szFileName, FILE_ATTRIBUTE_NORMAL, &fi, sizeof(fi),
-					SHGFI_SYSICONINDEX | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES );
-				ctrl.insertItem( k, kiPath::name(m_files[i].inf.szFileName), (LPARAM)(&m_files[i]), fi.iIcon );
+				ctrl.insertItem( k, kiPath::name(m_files[i].inf.szFileName), (LPARAM)(&m_files[i]),
+					cachedIconFor(m_files[i].inf.szFileName) );
 				ctrl.setSubItem( k, 1, m_files[i].rawline );
 				k++;
 			}
@@ -333,9 +331,7 @@ bool CArcViewDlg::giveData( const FORMATETC& fmt, STGMEDIUM* stg, bool firstcall
 		else
 		{
 			ki_strcpy( buf,lst[i] );
-			for( int k=0; k!=lst[i].len(); k++ )
-				if( buf[k] == '/' )
-					buf[k] = '\\';
+			kiStr::replaceToBackslash( buf );
 			buf += lst[i].len() + 1;
 		}
 	}
@@ -494,8 +490,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			NMHDR* phdr=(NMHDR*)lp;
 			if( phdr->code==LVN_BEGINDRAG || phdr->code==LVN_BEGINRDRAG )
 			{
-				for( unsigned _fi=0; _fi<m_fileIndices.len(); _fi++ )
-					m_files[ m_fileIndices[_fi] ].selected = false;
+				clearSelections();
 				if( setSelection() )
 					kiDropSource::DnD( this, DROPEFFECT_COPY );
 				return TRUE;
@@ -504,8 +499,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 				sendMsg( WM_COMMAND, IDC_SHOW );
 			else if( phdr->code==NM_RCLICK )
 			{
-				for( unsigned _fi=0; _fi<m_fileIndices.len(); _fi++ )
-					m_files[ m_fileIndices[_fi] ].selected = false;
+				clearSelections();
 				if( setSelection() )
 					DoRMenu();
 			}
@@ -535,8 +529,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			return TRUE;
 
 		case IDC_MELTEACH: // Partial extraction
-			for( unsigned _fi=0; _fi<m_fileIndices.len(); _fi++ )
-				m_files[ m_fileIndices[_fi] ].selected = false;
+			clearSelections();
 			if( setSelection() )
 			{
 				setdir();
@@ -555,8 +548,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			return TRUE;
 
 		case IDC_SHOW: // Show
-			for( unsigned _fi=0; _fi<m_fileIndices.len(); _fi++ )
-				m_files[ m_fileIndices[_fi] ].selected = false;
+			clearSelections();
 			if( setSelection() )
 			{
 				int assocCnt = hlp_cnt_check();
@@ -570,9 +562,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 							kiPath tmp(m_tdir);
 							char yen[MAX_PATH];
 							ki_strcpy( yen, m_files[i].inf.szFileName );
-							for( char* p=yen; *p; p=kiStr::next(p) )
-								if( *p=='/' )
-									*p = '\\';
+							kiStr::replaceToBackslash( yen );
 							tmp += yen;
 							::ShellExecute( hwnd(), NULL, tmp, NULL, m_tdir, SW_SHOWDEFAULT );
 						}
@@ -819,6 +809,25 @@ void CArcViewDlg::LayoutPanes( int dlgW, int paneH )
 	::InvalidateRect( hwnd(), &sr, TRUE );
 }
 
+// Binary search in m_folderSorted for the path buf.
+// Returns the index in m_folderSorted where buf is (or should be inserted).
+// Sets *found = true if an exact match exists.
+static unsigned int folder_bisect( const StrArray& paths, const kiArray<unsigned int>& sorted,
+	const char* buf, bool* found )
+{
+	unsigned int lo = 0, hi = sorted.len();
+	while( lo < hi )
+	{
+		unsigned int mid = (lo + hi) / 2;
+		int cmp = ::lstrcmp( paths[ sorted[mid] ], buf );
+		if( cmp == 0 ) { *found = true; return mid; }
+		if( cmp < 0 )  lo = mid + 1;
+		else           hi = mid;
+	}
+	*found = false;
+	return lo;
+}
+
 void CArcViewDlg::BuildFolderTree( HTREEITEM hRoot, int folderIconIdx )
 {
 	for( unsigned int fi=0; fi!=m_fileIndices.len(); fi++ )
@@ -834,14 +843,12 @@ void CArcViewDlg::BuildFolderTree( HTREEITEM hRoot, int folderIconIdx )
 			::CopyMemory( buf, fn, len );
 			buf[len] = '\0';
 
-			// Skip if already registered
-			bool found = false;
-			for( unsigned int j=0; j<m_folderPaths.len(); j++ )
-				if( 0 == ::lstrcmp( m_folderPaths[j], buf ) )
-					{ found = true; break; }
+			// Skip if already registered (binary search)
+			bool found;
+			unsigned int pos = folder_bisect( m_folderPaths, m_folderSorted, buf, &found );
 			if( found ) continue;
 
-			// Find parent node (strip last component from buf)
+			// Find parent node (strip last component from buf, then binary search)
 			HTREEITEM hParent = hRoot;
 			for( int k=len-2; k>=0; k-- )
 			{
@@ -850,9 +857,10 @@ void CArcViewDlg::BuildFolderTree( HTREEITEM hRoot, int folderIconIdx )
 					char pbuf[MAX_PATH];
 					::CopyMemory( pbuf, buf, k+1 );
 					pbuf[k+1] = '\0';
-					for( unsigned int j=0; j<m_folderPaths.len(); j++ )
-						if( 0 == ::lstrcmp( m_folderPaths[j], pbuf ) )
-							{ hParent = m_treeNodes[j]; break; }
+					bool pfound;
+					unsigned int ppos = folder_bisect( m_folderPaths, m_folderSorted, pbuf, &pfound );
+					if( pfound )
+						hParent = m_treeNodes[ m_folderSorted[ppos] ];
 					break;
 				}
 			}
@@ -877,9 +885,14 @@ void CArcViewDlg::BuildFolderTree( HTREEITEM hRoot, int folderIconIdx )
 			tvis.item.iSelectedImage = folderIconIdx;
 			HTREEITEM h = (HTREEITEM)::SendMessage( m_hTree, TVM_INSERTITEM, 0, (LPARAM)&tvis );
 
-			kiStr s( buf );
-			m_folderPaths.add( s );
+			// Register: append to paths/nodes, insert index into sorted list
+			unsigned int newIdx = m_folderPaths.len();
+			m_folderPaths.add( kiStr(buf) );
 			m_treeNodes.add( h );
+			m_folderSorted.add( 0 );  // extend by 1 (value overwritten below)
+			for( unsigned int k=newIdx; k>pos; k-- )
+				m_folderSorted[k] = m_folderSorted[k-1];
+			m_folderSorted[pos] = newIdx;
 		}
 	}
 }
@@ -887,10 +900,10 @@ void CArcViewDlg::BuildFolderTree( HTREEITEM hRoot, int folderIconIdx )
 void CArcViewDlg::FilterListByFolder( int folderIdx )
 {
 	// Clear selection on all file entries before rebuilding the list
-	for( unsigned int fi=0; fi!=m_fileIndices.len(); fi++ )
-		m_files[ m_fileIndices[fi] ].selected = false;
+	clearSelections();
 
 	kiListView ctrl( this, IDC_FILELIST );
+	::SendMessage( item(IDC_FILELIST), WM_SETREDRAW, FALSE, 0 );
 	::SendMessage( item(IDC_FILELIST), LVM_DELETEALLITEMS, 0, 0 );
 
 	const char* prefix    = NULL;
@@ -915,13 +928,13 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 			if( dirLen != prefixLen || !ki_memcmp( fn, prefix, prefixLen ) )
 				continue;
 		}
-		SHFILEINFO sfi2; ::ZeroMemory( &sfi2, sizeof(sfi2) );
-		::SHGetFileInfo( af.inf.szFileName, FILE_ATTRIBUTE_NORMAL, &sfi2, sizeof(sfi2),
-			SHGFI_SYSICONINDEX | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES );
-		ctrl.insertItem( k, kiPath::name(af.inf.szFileName), (LPARAM)(&af), sfi2.iIcon );
+		ctrl.insertItem( k, kiPath::name(af.inf.szFileName), (LPARAM)(&af),
+			cachedIconFor(af.inf.szFileName) );
 		ctrl.setSubItem( k, 1, af.rawline );
 		k++;
 	}
+	::SendMessage( item(IDC_FILELIST), WM_SETREDRAW, TRUE, 0 );
+	::InvalidateRect( item(IDC_FILELIST), NULL, TRUE );
 }
 
 void CArcViewDlg::DoRMenu()

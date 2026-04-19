@@ -71,6 +71,8 @@ protected: //--< for child >--
 
 private: //--< private >--
 
+	void ensure_loaded() { if(not_loaded){ m_Able=v_load(); not_loaded=false; } }
+
 	friend class CNoahArchiverManager;
 	bool extCheck( const char* ext );
 	kiStr m_MyExtList, m_MyCmpExt;
@@ -85,16 +87,14 @@ public: //--< dummy >--
 
 inline int CArchiver::ability()
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return m_Able;
 }
 
 inline int CArchiver::cancompressby( const char* ext, const char* mhd, bool sfx )
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
-	if( (sfx && !(m_Able&aSfx)) || !(m_Able&aCompress) || !m_MyCmpExt.isSame(ext) )
+	ensure_loaded();
+	if( (sfx && !(m_Able&aSfx)) || !(m_Able&aCompress) || !m_MyCmpExt.equalsIgnoreCase(ext) )
 		return -1; // no
 	for( unsigned int i=0; i!=m_Mhd.len(); i++ )
 		if( m_Mhd[i] == mhd )
@@ -104,43 +104,37 @@ inline int CArchiver::cancompressby( const char* ext, const char* mhd, bool sfx 
 
 inline bool CArchiver::check( const kiPath& aname )
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return (m_Able&aCheck)?v_check(aname):false;
 }
 
 inline int CArchiver::contents( const kiPath& aname, kiPath& dname )
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return (m_Able&aList)?v_contents(aname,dname):false;
 }
 
 inline int CArchiver::melt( const arcname& aname, const kiPath& ddir, const aflArray* files )
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return (m_Able&aMelt)?v_melt(aname,ddir,files):0xffff;
 }
 
 inline bool CArchiver::list( const arcname& aname, aflArray& files )
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return (m_Able&aList)?v_list(aname,files):false;
 }
 
 inline int CArchiver::compress( const kiPath& base, const wfdArray& files, const kiPath& ddir, int method, bool sfx )
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return (m_Able&aCompress)?v_compress(base,files,ddir,method,sfx):0xffff;
 }
 
 inline bool CArchiver::ver( kiStr& str )
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return v_ver(str);
 }
 
@@ -151,22 +145,19 @@ inline const char* CArchiver::mlt_ext()
 
 inline const kiStr& CArchiver::cmp_ext()
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return m_MyCmpExt;
 }
 
 inline const StrArray& CArchiver::cmp_mhd_list()
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return m_Mhd;
 }
 
 inline const int CArchiver::cmp_mhd_default()
 {
-	if( not_loaded )
-		m_Able=v_load(), not_loaded=false;
+	ensure_loaded();
 	return m_MhdDef;
 }
 
@@ -226,14 +217,12 @@ public:
 	CArcModule( const char* name, bool us=false );
 	virtual ~CArcModule() {}
 	bool exist();
-	bool chk( const char* ) { return false; }
 
 	kiStr name() const { return kiPath::name(m_name); }
 
 	int cmd( const char* cmd, bool mini=false );
 	void ver( kiStr& str );
 
-	int  cnt( const kiPath& aname, kiPath& dname, const char* wild="*" );
 	bool lst_exe( const char* lstcmd, aflArray& files,
 		const char* BL, int BSL, const char* EL, int SL, int dx );
 

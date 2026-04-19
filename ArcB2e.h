@@ -15,8 +15,6 @@ private: //--<CArchiver>--
 
 	int  v_load();
 	bool v_ver( kiStr& str );
-	bool v_check( const kiPath& aname );
-	int  v_contents( const kiPath& aname, kiPath& dname );
 	int  v_melt( const arcname& aname, const kiPath& ddir, const aflArray* files );
 	bool v_list( const arcname& aname, aflArray& files );
 	int  v_compress( const kiPath& base, const wfdArray& files, const kiPath& ddir, int method, bool sfx );

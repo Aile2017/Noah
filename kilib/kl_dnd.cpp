@@ -180,7 +180,7 @@ public:
 			m_nCur += celt;
 			if( m_pObj->m_FormatList.len() <= m_nCur )
 			{
-				m_nCur = m_pObj->m_FormatList.len() - 1;
+				m_nCur = m_pObj->m_FormatList.len();
 				return S_FALSE;
 			}
 			return S_OK;

@@ -68,7 +68,6 @@ public: //-- Public interface --------------------------
 		{
 			kiWindow* ptr = (kiWindow*)::GetWindowLongPtr( wnd, GWLP_USERDATA );
 			if( !ptr ) return NULL;
-			if( ::IsBadCodePtr((FARPROC)&ptr) ) return NULL;
 			return ptr;
 		}
 

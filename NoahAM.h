@@ -16,7 +16,7 @@ public: //-- Public interface ------------
 	// Store file list
 	unsigned long set_files( const cCharArray& files );
 	unsigned long file_num() { return m_FName.len(); }
-	const kiPath& get_basepath() { return m_BasePath; }
+	const kiPath& get_basepath() { return m_BasePathList[0]; }
 	bool map_melters( int mode );
 	bool map_compressor( const char* ext, const char* method, bool sfx );
 
@@ -43,7 +43,6 @@ private: //-- Internal processing ---------------------------
 	CArchiver* fromExt( const char* ext );
 	void generate_dirname( const char* src, kiPath& dst, bool rmn );
 
-	kiPath   m_BasePath;
 	wfdArray m_FName;
 	kiArray<CArchiver*> m_AList;
 	kiArray<kiPath> m_BasePathList;

@@ -48,12 +48,12 @@ kiStr& kiStr::operator = ( const kiStr& s )
 kiStr& kiStr::operator = ( const char* s )
 {
 	int slen = ki_strlen( s ) + 1;
-	int  len = this->len();
 
-	if( m_ALen < slen || s <= m_pBuf+len || m_pBuf <= s+slen )
+	// Reallocate if buffer too small, or if s points into our own buffer (overlap)
+	if( m_ALen < slen || (s >= m_pBuf && s < m_pBuf + m_ALen) )
 	{
 		char* tmp = new char[ m_ALen = ( m_ALen>slen ? m_ALen : slen) ];
-		ki_memcpy( tmp, s, slen );
+		ki_memcpy( tmp, s, slen );   // copy s before freeing old buffer
 		delete [] m_pBuf;
 		m_pBuf = tmp;
 	}
@@ -67,14 +67,17 @@ kiStr& kiStr::operator += ( const char* s )
 	int slen = ki_strlen( s ) + 1;
 	int  len = this->len();
 
-	if( m_ALen < len+slen+1
-	 || ( s <= m_pBuf && m_pBuf <= s+len )
-	 || ( m_pBuf <= s && s <= m_pBuf+slen ) )
+	// Reallocate if buffer too small, or if s points into our own buffer (overlap).
+	// In the overlap case, copy s into the new buffer before freeing the old one
+	// to avoid use-after-free.
+	if( m_ALen < len+slen+1 || (s >= m_pBuf && s < m_pBuf + m_ALen) )
 	{
 		char* tmp = new char[ m_ALen = ( m_ALen>slen+len+1 ? m_ALen : slen+len+1) ];
 		ki_memcpy( tmp, m_pBuf, len );
+		ki_memcpy( tmp+len, s, slen );
 		delete [] m_pBuf;
 		m_pBuf = tmp;
+		return *this;
 	}
 
 	ki_memcpy( m_pBuf+len, s, slen );
@@ -147,7 +150,7 @@ bool kiStr::operator == ( const char* s ) const
 	return 0==ki_strcmp( m_pBuf, s );
 }
 
-bool kiStr::isSame( const char* s ) const
+bool kiStr::equalsIgnoreCase( const char* s ) const
 {
 	return 0==ki_strcmpi( m_pBuf, s );
 }
@@ -370,10 +373,3 @@ UINT kiPath::getDriveType() const
 	*p=c; return ans;
 }
 
-bool kiPath::endwithyen( const char* str )
-{
-	const char* last = str;
-	for( const char* p=str; *p; p=next(p) )
-		last=p;
-	return ( *last=='\\' || *last=='/' );
-}

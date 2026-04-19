@@ -310,7 +310,6 @@ bool kiRythpVM::exec_function( const kiVar& name,
 			else
 			{
 				kiVar t2;
-				getarg(a[1],b[1],&t),  A=t.getInt();
 				getarg(a[2],b[2],&t2), B=t2.getInt();
 				if( isIntStr(t) && isIntStr(t2) )
 					*r = A!=B ? "1" : "0";

@@ -268,7 +268,7 @@ void CNoahApp::open_folder( const kiPath& path, int from )
 	kiPath dir(path), tmp(kiPath::Dsk,false);
 	dir.beBackSlash(false), dir.beShortPath(), tmp.beShortPath();
 
-	if( !tmp.isSame( dir ) )
+	if( !tmp.equalsIgnoreCase( dir ) )
 	{
 		//-- Load-INI( folder open settings )
 		m_cnfMan.load( OpenDir );

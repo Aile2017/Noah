@@ -90,7 +90,6 @@ public: //-- Interface for getting settings items
 	const bool    mdirsm(){ return m_MDirSm; }// Extract to same directory?
 	const int     mkdir() { return m_MkDir; } // 0:no 1:file 2:dir 3:always
 	const bool    mnonum(){ return m_MNoNum; }// Omit numeric suffix
-	const char*   kill()  { return m_Kill; }  // Built-in routines to disable
 	// Section: Compress
 	const kiPath& cdir()  { return m_CDir; }  // Compression destination
 	const bool    cdirsm(){ return m_CDirSm; }// Compress to same directory?
@@ -117,7 +116,6 @@ private: //-- Internal variables
 	kiStr  m_OpenBy;
 	kiStr  m_CMhd;
 	bool   m_MNoNum;
-	kiStr  m_Kill;
 	bool   m_MiniBoot;
 	bool   m_OldVer;
 	bool   m_OneExt, m_ZeroExt;

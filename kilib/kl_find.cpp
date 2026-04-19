@@ -58,7 +58,7 @@ bool kiFindFile::next( WIN32_FIND_DATA* pfd )
 	}
 	if( !::FindNextFile( h, pfd ) )
 		return false;
-	while( isDots(fd.cFileName) )
+	while( isDots(pfd->cFileName) )
 		if( !::FindNextFile( h, pfd ) )
 			return false;
 	return true;

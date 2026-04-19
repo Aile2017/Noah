@@ -13,7 +13,6 @@ public: //-- static ----------------------------------------
 
 	// Get file size (name, value to return on error)
 	static unsigned long getSize( const char* fname, unsigned long err=0xffffffff );
-	static __int64 getSize64( const char* fname );
 
 public: //-- Public interface --------------------------
 

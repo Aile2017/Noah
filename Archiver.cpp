@@ -113,11 +113,6 @@ void CArcModule::ver( kiStr& str )
 }
 
 
-int CArcModule::cnt( const kiPath& aname, kiPath& dname, const char* wild )
-{
-	return aUnknown;
-}
-
 bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 	const char* BL, int BSL, const char* EL, int SL, int dx )
 	// BeginLine, BeginSkipLine, EndLine, SkipLine, delta-x
@@ -239,7 +234,7 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 					for( int t=dx; ++t; )
 					{
 						for( ;ls<le;++ls )
-							if( *ls==' ' || *ls=='\t' && *ls=='\r' )
+							if( *ls==' ' || *ls=='\t' || *ls=='\r' )
 								break;
 						for( ;ls<le;++ls )
 							if( *ls!=' ' && *ls!='\t' && *ls!='\r' )

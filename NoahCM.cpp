@@ -24,13 +24,23 @@ void CNoahConfigManager::init()
 	m_Ini.setFileName( "Noah.ini" );
 	m_Ini.setSection( usr );
 
-	//-- Pre-load all extraction settings
-	load( Melt );
 }
 
 //----------------------------------------------//
 //------------- Settings load & save -----------//
 //----------------------------------------------//
+
+static void decode_dir( const char* raw, bool& same, kiPath& dir )
+{
+	same = (*raw == '@');
+	dir  = same ? raw+1 : raw;
+}
+
+static void encode_dir( kiStr& tmp, bool same, const kiPath& dir )
+{
+	tmp = same ? "@" : "";
+	tmp += dir;
+}
 
 void CNoahConfigManager::load( loading_flag what )
 {
@@ -45,19 +55,14 @@ void CNoahConfigManager::load( loading_flag what )
 	}
 	if( (what & Melt) && !(m_Loaded & Melt) ) //----------- Extraction
 	{
-		const char* x = m_Ini.getStr( "MDir", kiPath( kiPath::Dsk ) );
-		m_MDirSm = (*x=='@');
-		m_MDir   = (*x=='@') ? x+1 : x;
+		decode_dir( m_Ini.getStr( "MDir", kiPath( kiPath::Dsk ) ), m_MDirSm, m_MDir );
 		const int m = m_Ini.getInt( "MkDir", 2 );
 		m_MNoNum = ( m>=16 );
 		m_MkDir  = ( m&3 );
-		m_Kill   = m_Ini.getStr( "Kill", "" );
 	}
 	if( (what & Compress) && !(m_Loaded & Compress) ) //--- Compression
 	{
-		const char* x = m_Ini.getStr( "CDir", kiPath( kiPath::Dsk ) );
-		m_CDirSm = (*x=='@');
-		m_CDir   = (*x=='@') ? x+1 : x;
+		decode_dir( m_Ini.getStr( "CDir", kiPath( kiPath::Dsk ) ), m_CDirSm, m_CDir );
 		m_CExt = m_Ini.getStr( "CExt", "zip" );
 		m_CMhd = m_Ini.getStr( "CMhd", "7-zip" );
 	}
@@ -76,19 +81,25 @@ void CNoahConfigManager::save()
 	kiStr tmp;
 
 	//-- Mode
-	m_Ini.putInt( "Mode", m_Mode );
+	m_Ini.putInt(  "Mode",           m_Mode );
+	m_Ini.putBool( "MiniBoot",       m_MiniBoot );
+	m_Ini.putBool( "OneExt",         m_OneExt );
+	m_Ini.putBool( "NoExt",          m_ZeroExt );
+	m_Ini.putInt(  "MultiBootLimit", m_MbLim );
+	m_Ini.putBool( "OldAbout",       m_OldVer );
 	//-- Extraction
-	tmp = m_MDirSm ? "@" : "", tmp+= m_MDir;
+	encode_dir( tmp, m_MDirSm, m_MDir );
 	m_Ini.putStr( "MDir", tmp );
 	m_Ini.putInt( "MkDir", m_MkDir+(m_MNoNum?16:0) );
 	//-- Compression
-	tmp = m_CDirSm ? "@" : "", tmp+= m_CDir;
+	encode_dir( tmp, m_CDirSm, m_CDir );
 	m_Ini.putStr( "CDir", tmp );
 	m_Ini.putStr( "CExt", m_CExt );
 	m_Ini.putStr( "CMhd", m_CMhd );
 	//-- Folder open
-	m_Ini.putBool("MODir", m_MODir );
-	m_Ini.putBool("CODir", m_CODir );
+	m_Ini.putBool( "MODir",  m_MODir );
+	m_Ini.putBool( "CODir",  m_CODir );
+	m_Ini.putStr(  "OpenBy", m_OpenBy );
 }
 
 void CNoahConfigManager::dialog()

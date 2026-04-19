@@ -37,23 +37,14 @@ unsigned long CNoahArchiverManager::set_files( const cCharArray& files )
 	m_FName.empty();
 	m_BasePathList.empty();
 
-	//-- Get base path (in 8.3 format to maximize compatibility)
-	if( files.len() != 0 )
-	{
-		char spath[MAX_PATH];
-		m_BasePath =
-			( 0!=::GetShortPathName( files[0], spath, MAX_PATH ) )
-			? spath : "";
-		if( !m_BasePath.beDirOnly() )
-		{
-			m_BasePath.beSpecialPath( kiPath::Cur );
-			m_BasePath.beBackSlash( true );
-		}
-	}
-
 	//-- Get both short and long file names
 	m_FName.alloc( files.len() );
 	m_BasePathList.alloc( files.len() );
+
+	kiPath curDir;
+	curDir.beSpecialPath( kiPath::Cur );
+	curDir.beBackSlash( true );
+
 	unsigned int i=0,c=0;
 	for( ; i!=files.len(); i++ )
 		if( kiFindFile::findfirst( files[i], &m_FName[c] ) )
@@ -62,10 +53,7 @@ unsigned long CNoahArchiverManager::set_files( const cCharArray& files )
 				::lstrcpy(m_FName[c].cAlternateFileName,m_FName[c].cFileName);
 			m_BasePathList[c] = files[i];
 			if( !m_BasePathList[c].beDirOnly() )
-			{
-				m_BasePathList[c].beSpecialPath( kiPath::Cur );
-				m_BasePathList[c].beBackSlash( true );
-			}
+				m_BasePathList[c] = curDir;
 			++c;
 		}
 	m_FName.forcelen( c );
@@ -104,7 +92,6 @@ bool CNoahArchiverManager::map_melters( int mode ) // 1:cmp 2:mlt 3:must_mlt
 	unsigned int ct=0, bad=0;
 	for( ; ct!=file_num(); ct++ )
 	{
-//		fnm = m_BasePath, fnm += sname;
 		fnm = m_BasePathList[ct], fnm += sname;
 
 		//-- Reject 0-byte files / directories
@@ -308,11 +295,7 @@ void CNoahArchiverManager::do_listing( kiPath& destdir )
 		if( !m_Melters[i] )
 			continue;
 
-		arcname an(
-			m_BasePathList[i],
-//			m_BasePath,
-			m_FName[i].cAlternateFileName[0]==0 ? m_FName[i].cFileName : m_FName[i].cAlternateFileName,
-			m_FName[i].cFileName );
+		arcname an( m_BasePathList[i], m_FName[i].cAlternateFileName, m_FName[i].cFileName );
 		ddir = destdir;
 
 		if( mdf )
@@ -360,7 +343,6 @@ void CNoahArchiverManager::do_melting( kiPath& destdir )
 			else
 			{
 				kiPath anm(m_BasePathList[i]);
-//				kiPath anm(m_BasePath);
 				anm+=m_FName[i].cFileName;
 				int c = m_Melters[i]->contents( anm, dnm );
 				if( c==aSingleDir || (c==aSingleFile && mdf==1) )
@@ -380,10 +362,7 @@ void CNoahArchiverManager::do_melting( kiPath& destdir )
 
 			//-- Extract!
 
-			arcname an( m_BasePathList[i],
-//			arcname an( m_BasePath,
-				m_FName[i].cAlternateFileName[0]==0 ? m_FName[i].cFileName : m_FName[i].cAlternateFileName,
-				m_FName[i].cFileName );
+			arcname an( m_BasePathList[i], m_FName[i].cAlternateFileName, m_FName[i].cFileName );
 			int result = m_Melters[i]->melt( an, ddir );
 			if( result<0x8000 )
 			{
@@ -565,13 +544,13 @@ void CNoahArchiverManager::do_compressing( kiPath& destdir, bool each )
 		{
 			templist.empty();
 			templist.add( m_FName[i] );
-			tr = m_Compressor->compress( m_BasePath,templist,destdir,m_Method,m_Sfx );
+			tr = m_Compressor->compress( m_BasePathList[0],templist,destdir,m_Method,m_Sfx );
 			if( tr<0x8000 || tr==0x8020 )
 				result = tr;
 		}
 	}
 	else
-		result = m_Compressor->compress( m_BasePath,m_FName,destdir,m_Method,m_Sfx );
+		result = m_Compressor->compress( m_BasePathList[0],m_FName,destdir,m_Method,m_Sfx );
 
 	// Maybe open folder
 	if( result<0x8000 )

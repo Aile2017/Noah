@@ -50,16 +50,6 @@ bool CArcB2e::v_ver( kiStr& str )
 	return true;
 }
 
-bool CArcB2e::v_check( const kiPath& aname )
-{
-	return exe ? exe->chk( aname ) : false;
-}
-
-int CArcB2e::v_contents( const kiPath& aname, kiPath& dname )
-{
-	return exe ? exe->cnt( aname, dname ) : aUnknown;
-}
-
 //------------------- Load script & eval( load: ) -------------------
 
 bool CArcB2e::load_module( const char* name )
@@ -82,7 +72,7 @@ int CArcB2e::v_load()
 		m_ScriptBuf[ ln ] = '\0';
 
 		//-- Split into sections
-		bool pack1,chk=false;
+		bool pack1;
 		for( char* p=m_ScriptBuf; *p; p++ )
 		{
 			switch( *p )
@@ -100,8 +90,6 @@ int CArcB2e::v_load()
 					*p='\0', m_SfxScr = (p+=3)+1, m_SfxDirect=false;
 				else if( ki_memcmp(p,"sfxd:",5) )
 					*p='\0', m_SfxScr = (p+=4)+1, m_SfxDirect=true;
-				else if( ki_memcmp(p,"check:",6) )
-					*p='\0', (p+=5), chk=true;
 				else if( ki_memcmp(p,"decode1:",8) )
 					*p='\0', m_DcEScr = (p+=7);
 				else if( ki_memcmp(p,"list:",5) )
@@ -129,7 +117,7 @@ int CArcB2e::v_load()
 
 			//-- Result
 			if( m_Result==0 )
-				return (m_DecScr?aMelt|(m_DcEScr?aList|aMeltEach:0)|(chk?aCheck:0):0)
+				return (m_DecScr?aMelt|(m_DcEScr?aList|aMeltEach:0):0)
 					 | (m_EncScr?aCompress|(pack1?0:aArchive)|(m_SfxScr?aSfx:0):0);
 		}
 	}
@@ -629,23 +617,15 @@ void CArcB2e::CB2eCore::arc( const char* opt, const CharArray& a, const BoolArra
 				if( 0!=ki_strcmpi( ext, opt+2 ) )
 					ext = anm + ki_strlen(anm), add = ".decompressed";
 			}
-			else if( opt[1]!='\0' )
-			{
-				// (arc.XXX)  : replace last extension with .XXX
-				add = opt;
-				switch(mycnf().extnum())
-				{
-				case 0: ext = anm + ::lstrlen(anm);break; 
-				case 1: ext = kiPath::ext(anm);    break;
-				default:ext = kiPath::ext_all(anm);break;
-				}
-			}
 			else
 			{
-				// (arc.)     : remove all extensions
+				// (arc.XXX) : replace last extension with .XXX
+				// (arc.)    : remove all extensions
+				if( opt[1]!='\0' )
+					add = opt;
 				switch(mycnf().extnum())
 				{
-				case 0: ext = anm + ::lstrlen(anm);break; 
+				case 0: ext = anm + ::lstrlen(anm);break;
 				case 1: ext = kiPath::ext(anm);    break;
 				default:ext = kiPath::ext_all(anm);break;
 				}

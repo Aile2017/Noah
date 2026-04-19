@@ -6,21 +6,6 @@
 
 //--------------------------- static --------------------------//
 
-__int64 kiFile::getSize64( const char* fname )
-{
-	HANDLE h = ::CreateFile( fname,
-				GENERIC_READ, FILE_SHARE_WRITE|FILE_SHARE_READ,
-				NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_SEQUENTIAL_SCAN, NULL );
-	if( h==INVALID_HANDLE_VALUE )
-		return 0;
-
-	DWORD low, hi;
-	low = ::GetFileSize( h, &hi );
-	::CloseHandle( h );
-
-	return ((__int64)hi<<32) | low;
-}
-
 unsigned long kiFile::getSize( const char* fname, unsigned long err )
 {
 	HANDLE h = ::CreateFile( fname,

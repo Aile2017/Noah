@@ -36,7 +36,7 @@ public: //-- Public interface --------------------------
 	kiStr& operator += ( const char* s );
 	kiStr& operator += ( char c );
 	bool operator == ( const char* s ) const;
-	bool isSame( const char* s )       const;
+	bool equalsIgnoreCase( const char* s ) const;
 	operator const char*()             const;
 	int len()                          const;
 	void lower()
@@ -48,6 +48,12 @@ public: //-- Public interface --------------------------
 		for(char* p=m_pBuf; *p; p=next(p))
 			if(*p=='\\')
 				*p='/';
+	}
+	void replaceToBackslash() { replaceToBackslash(m_pBuf); }
+	static void replaceToBackslash(char* p) {
+		for(; *p; p=next(p))
+			if(*p=='/')
+				*p='\\';
 	}
 
 	// Load from resource
@@ -132,8 +138,6 @@ public: //-- Public interface --------------------------
 	static const char* ext( const char* str );
 	// [static] All extensions. NULL if none.
 	static const char* ext_all( const char* str );
-	// [static] Whether ending with \ or /
-	static bool endwithyen( const char* str );
 
 	// non-static-ver
 	const char* name() const

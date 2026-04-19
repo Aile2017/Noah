@@ -58,7 +58,33 @@ private: //-- Processing as dialog
 	int   m_ghostX;
 	StrArray m_folderPaths;
 	kiArray<HTREEITEM> m_treeNodes;
+	kiArray<unsigned int> m_folderSorted;  // sorted indices into m_folderPaths (for binary search)
 	kiArray<unsigned int> m_fileIndices;
+	StrArray m_iconExtCache;
+	kiArray<int> m_iconIdxCache;
+
+private: //-- Helper
+
+	int cachedIconFor( const char* filename )
+	{
+		const char* ext = kiPath::ext( filename );
+		if( !ext ) ext = "";
+		for( unsigned i=0; i<m_iconExtCache.len(); i++ )
+			if( m_iconExtCache[i] == ext )
+				return m_iconIdxCache[i];
+		SHFILEINFO fi; ::ZeroMemory( &fi, sizeof(fi) );
+		::SHGetFileInfo( filename, FILE_ATTRIBUTE_NORMAL, &fi, sizeof(fi),
+			SHGFI_SYSICONINDEX | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES );
+		m_iconExtCache.add( kiStr(ext) );
+		m_iconIdxCache.add( fi.iIcon );
+		return fi.iIcon;
+	}
+
+	void clearSelections()
+	{
+		for( unsigned _fi=0; _fi<m_fileIndices.len(); _fi++ )
+			m_files[ m_fileIndices[_fi] ].selected = false;
+	}
 
 private: //-- Drag & drop processing
 
