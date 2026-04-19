@@ -76,6 +76,7 @@ private: //-- Right click
 	void GenerateDirMenu( HMENU m, int& id, StrArray* sx, const kiPath& pth );
 	void BuildFolderTree( HTREEITEM hRoot, int folderIconIdx );
 	void FilterListByFolder( int folderIdx );
+	void LayoutTopRow( int dlgW );
 	void LayoutPanes( int dlgW, int paneH );
 	void DrawSplitterGhost( int x );
 

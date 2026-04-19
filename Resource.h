@@ -50,6 +50,7 @@
 #define IDC_MESSAGE                     1057
 #define IDC_STATUSBAR                   1059
 #define IDC_FOLDERTREE                  1060
+#define IDC_DDIRLABEL                   1061
 #define IDA_MYDIR                       40001
 #define IDA_HELP                        40002
 

@@ -4,6 +4,7 @@
 #include "SubDlg.h"
 
 int CArcViewDlg::st_nLife;
+static const int ARCVIEW_SPLITTER_WIDTH = 3;
 
 // Subclass proc for the ListView header: gray background + 1px separator line
 static LRESULT CALLBACK HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -189,12 +190,12 @@ BOOL CArcViewDlg::onInit()
 	);
 	sendMsgToItem( IDC_STATUSBAR, WM_SETTEXT, 0, (LPARAM)tmp );
 
-	if( !m_bAble )
-	{
-		static const UINT items[] = { IDC_SELECTINV,IDC_REF,IDC_MELTEACH,IDC_SHOW,IDC_DDIR };
-		for( int i=0; i!=sizeof(items)/sizeof(UINT); i++ )
-			::EnableWindow( item(items[i]), FALSE );
-	}
+		if( !m_bAble )
+		{
+			static const UINT items[] = { IDC_SELECTINV,IDC_REF,IDC_MELTEACH,IDC_SHOW,IDC_DDIR,IDC_DDIRLABEL };
+			for( int i=0; i!=sizeof(items)/sizeof(UINT); i++ )
+				::EnableWindow( item(items[i]), FALSE );
+		}
 
 	//-- Folder tree
 	{
@@ -224,6 +225,22 @@ BOOL CArcViewDlg::onInit()
 	{ int w = mycnf().getInt("ArcViewW", 0), h = mycnf().getInt("ArcViewH", 0);
 	  if( w > 100 && h > 100 )
 	      ::SetWindowPos(hwnd(), NULL, 0, 0, w, h, SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE); }
+
+	{
+		RECT rc, self, ref, child, sbar;
+		::GetClientRect( hwnd(), &rc );
+		::GetWindowRect( hwnd(), &self );
+		::GetWindowRect( item(IDC_REF), &ref );
+		::GetWindowRect( item(IDC_FILELIST), &child );
+		::GetClientRect( item(IDC_STATUSBAR), &sbar );
+		LayoutTopRow( rc.right );
+		LayoutPanes( rc.right,
+			(self.bottom-ref.bottom)-(child.top-ref.bottom)
+			-(sbar.bottom-sbar.top)-10 );
+		::SetWindowPos( item(IDC_STATUSBAR), NULL, sbar.left,
+			rc.bottom - (sbar.bottom-sbar.top),
+			0, 0, SWP_NOSIZE|SWP_NOOWNERZORDER|SWP_NOZORDER );
+	}
 
 	return FALSE;
 }
@@ -350,11 +367,25 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 	//-- Resize-related processing ---------------------
 	case WM_GETMINMAXINFO:
 		{
-			RECT self,child;
+			RECT self,child,client;
 			::GetWindowRect( hwnd(), &self );
 			::GetWindowRect( item(IDC_REF), &child );
+			::GetClientRect( hwnd(), &client );
+			RECT label,ok,melt,show,inv,ref;
+			::GetWindowRect( item(IDC_DDIRLABEL), &label );
+			::GetWindowRect( item(IDOK), &ok );
+			::GetWindowRect( item(IDC_MELTEACH), &melt );
+			::GetWindowRect( item(IDC_SHOW), &show );
+			::GetWindowRect( item(IDC_SELECTINV), &inv );
+			::GetWindowRect( item(IDC_REF), &ref );
 			POINT& sz = ((MINMAXINFO*)lp)->ptMinTrackSize;
-			sz.x = child.right - self.left + 18;
+			const int minEdit = 220;
+			const int margin = 7, gap = 3, groupGap = 7;
+			int minClientW = margin + (label.right-label.left) + gap
+				+ minEdit + gap + (ref.right-ref.left) + groupGap
+				+ (ok.right-ok.left) + gap + (melt.right-melt.left)
+				+ gap + (show.right-show.left) + gap + (inv.right-inv.left) + margin;
+			sz.x = minClientW + ((self.right-self.left) - (client.right-client.left));
 			sz.y = child.bottom - self.top + 100;
 		}
 		return TRUE;
@@ -369,7 +400,8 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 
 			int newH = (self.bottom-ref.bottom)-(child.top-ref.bottom)
 				   -(sbar.bottom-sbar.top)-10;
-		LayoutPanes( (int)(short)LOWORD(lp), newH );
+			LayoutTopRow( (int)(short)LOWORD(lp) );
+			LayoutPanes( (int)(short)LOWORD(lp), newH );
 
 			::GetClientRect( hwnd(), &self );
 			::SetWindowPos( item(IDC_STATUSBAR), NULL, sbar.left,
@@ -382,7 +414,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 		if( LOWORD(lp)==HTCLIENT )
 		{
 			POINT pt; ::GetCursorPos(&pt); ::ScreenToClient(hwnd(),&pt);
-			if( pt.x >= m_listLeft-5 && pt.x < m_listLeft )
+			if( pt.x >= m_listLeft-ARCVIEW_SPLITTER_WIDTH && pt.x < m_listLeft )
 			{
 				::SetCursor( ::LoadCursor(NULL, IDC_SIZEWE) );
 				return TRUE;
@@ -393,7 +425,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 	case WM_LBUTTONDOWN:
 		{
 			int x = (int)(short)LOWORD(lp);
-			if( x >= m_listLeft-5 && x < m_listLeft )
+			if( x >= m_listLeft-ARCVIEW_SPLITTER_WIDTH && x < m_listLeft )
 			{
 				m_bDragging    = true;
 				m_dragX        = x;
@@ -411,7 +443,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			DrawSplitterGhost( m_ghostX );  // erase old
 			int newLeft = m_dragListLeft + (int)(short)LOWORD(lp) - m_dragX;
 			RECT rc; ::GetClientRect( hwnd(), &rc );
-			const int SP=5, minTree=30, minList=80;
+			const int SP=ARCVIEW_SPLITTER_WIDTH, minTree=30, minList=80;
 			if( newLeft < minTree+SP )      newLeft = minTree+SP;
 			if( newLeft > rc.right-minList ) newLeft = rc.right-minList;
 			m_listLeft = newLeft;
@@ -673,6 +705,72 @@ void CArcViewDlg::GenerateDirMenu( HMENU m, int& id, StrArray* sx, const kiPath&
 		}
 }
 
+void CArcViewDlg::LayoutTopRow( int dlgW )
+{
+	const int margin   = 7;
+	const int gap      = 3;
+	const int groupGap = 7;
+
+	RECT rcLabel, rcEdit, rcRef, rcOK, rcMelt, rcShow, rcInv;
+	::GetWindowRect( item(IDC_DDIRLABEL), &rcLabel );
+	::GetWindowRect( item(IDC_DDIR),      &rcEdit );
+	::GetWindowRect( item(IDC_REF),       &rcRef );
+	::GetWindowRect( item(IDOK),          &rcOK );
+	::GetWindowRect( item(IDC_MELTEACH),  &rcMelt );
+	::GetWindowRect( item(IDC_SHOW),      &rcShow );
+	::GetWindowRect( item(IDC_SELECTINV), &rcInv );
+
+	const int labelW = rcLabel.right - rcLabel.left;
+	const int labelH = rcLabel.bottom - rcLabel.top;
+	const int labelY = 5;
+	const int topY  = 3;
+	const int editH = rcEdit.bottom - rcEdit.top;
+	const int refW  = rcRef.right - rcRef.left;
+	const int refH  = rcRef.bottom - rcRef.top;
+	const int okW   = rcOK.right - rcOK.left;
+	const int okH   = rcOK.bottom - rcOK.top;
+	const int meltW = rcMelt.right - rcMelt.left;
+	const int meltH = rcMelt.bottom - rcMelt.top;
+	const int showW = rcShow.right - rcShow.left;
+	const int showH = rcShow.bottom - rcShow.top;
+	const int invW  = rcInv.right - rcInv.left;
+	const int invH  = rcInv.bottom - rcInv.top;
+
+	int x = dlgW - margin;
+	const int invX  = x - invW;  x = invX  - gap;
+	const int showX = x - showW; x = showX - gap;
+	const int meltX = x - meltW; x = meltX - gap;
+	const int okX   = x - okW;
+	const int editX = margin + labelW + gap;
+	const int editW = okX - groupGap - editX - gap - refW;
+	const int browseX = editX + editW + gap;
+
+	HDWP hdwp = ::BeginDeferWindowPos( 7 );
+	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDC_DDIRLABEL), NULL,
+			margin, labelY, labelW, labelH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDC_DDIR), NULL,
+			editX, topY, editW, editH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDC_REF), NULL,
+			browseX, topY, refW, refH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDOK), NULL,
+			okX, topY, okW, okH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDC_MELTEACH), NULL,
+			meltX, topY, meltW, meltH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDC_SHOW), NULL,
+			showX, topY, showW, showH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDC_SELECTINV), NULL,
+			invX, topY, invW, invH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
+		::EndDeferWindowPos( hdwp );
+}
+
 void CArcViewDlg::DrawSplitterGhost( int x )
 {
 	if( x < 0 ) return;
@@ -688,7 +786,7 @@ void CArcViewDlg::DrawSplitterGhost( int x )
 
 void CArcViewDlg::LayoutPanes( int dlgW, int paneH )
 {
-	const int SP = 5; // splitter strip width (pixels, dialog client area)
+	const int SP = ARCVIEW_SPLITTER_WIDTH; // splitter strip width (pixels, dialog client area)
 	const int minTree = 30;
 	const int minList = 80;
 	if( m_listLeft < minTree + SP ) m_listLeft = minTree + SP;
