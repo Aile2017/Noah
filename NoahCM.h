@@ -73,6 +73,10 @@ public: //-- Operations
 	void save();
 	void dialog();
 
+public: //-- Generic INI accessors (for per-dialog persistence)
+	int  getInt( const char* key, int defval ) { return m_Ini.getInt(key, defval); }
+	void putInt( const char* key, int val )    { m_Ini.putInt(key, val); }
+
 public: //-- Interface for getting settings items
 
 	// Section: Mode

@@ -10,7 +10,9 @@ class CArcViewDlg : public kiDialog, kiDataObject
 public:
 	CArcViewDlg( CArchiver* ptr,arcname& fnm,const kiPath& ddir )
 		: kiDialog( IDD_ARCVIEW ), m_pArc( ptr ),
-		m_fname( fnm ), m_ddir( ddir ), m_hFont( NULL ), m_hHeader( NULL )
+		m_fname( fnm ), m_ddir( ddir ), m_hFont( NULL ), m_hHeader( NULL ),
+		m_hTree( NULL ), m_listLeft( 0 ), m_listTop( 0 ),
+		m_bDragging( false ), m_dragX( 0 ), m_dragListLeft( 0 ), m_ghostX( -1 )
 		{
 			AddRef();
 			myapp().get_tempdir( m_tdir );
@@ -47,6 +49,16 @@ private: //-- Processing as dialog
 	bool m_bAble;
 	HFONT m_hFont;
 	HWND  m_hHeader;
+	HWND  m_hTree;
+	int   m_listLeft;
+	int   m_listTop;
+	bool  m_bDragging;
+	int   m_dragX;
+	int   m_dragListLeft;
+	int   m_ghostX;
+	StrArray m_folderPaths;
+	kiArray<HTREEITEM> m_treeNodes;
+	kiArray<unsigned int> m_fileIndices;
 
 private: //-- Drag & drop processing
 
@@ -62,6 +74,10 @@ private: //-- Right click
 
 	void DoRMenu();
 	void GenerateDirMenu( HMENU m, int& id, StrArray* sx, const kiPath& pth );
+	void BuildFolderTree( HTREEITEM hRoot, int folderIconIdx );
+	void FilterListByFolder( int folderIdx );
+	void LayoutPanes( int dlgW, int paneH );
+	void DrawSplitterGhost( int x );
 
 private: //-- Extraction
 

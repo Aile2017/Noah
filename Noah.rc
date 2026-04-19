@@ -77,9 +77,12 @@ STYLE WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU |
     WS_THICKFRAME
 FONT 9, "Segoe UI"
 BEGIN
+    CONTROL         "",IDC_FOLDERTREE,"SysTreeView32",TVS_HASLINES |
+                    TVS_HASBUTTONS | TVS_LINESATROOT | TVS_SHOWSELALWAYS |
+                    WS_BORDER | WS_TABSTOP,0,20,80,126
     CONTROL         "List1",IDC_FILELIST,"SysListView32",LVS_REPORT |
                     LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER |
-                    WS_TABSTOP,0,20,350,126
+                    WS_TABSTOP,82,20,268,126
     PUSHBUTTON      "Extract &All",IDOK,7,3,36,14
     PUSHBUTTON      "E&xtract",IDC_MELTEACH,46,3,26,14
     PUSHBUTTON      "&Inv",IDC_SELECTINV,97,3,19,14
@@ -279,7 +282,7 @@ BEGIN
     IDS_PATH                "PATH"
     IDS_EXECUTING           "An application launched by Noah is still running. Do you really want to close?"
     IDS_NOLIST              "Error: Cannot list the contents of this archive."
-    IDS_ARCVIEW_MSG         "[%d files] [Ratio: %d%%] [%s]"
+    IDS_ARCVIEW_MSG         "[%d files] [%s]"
 END
 
 #endif    // English resources

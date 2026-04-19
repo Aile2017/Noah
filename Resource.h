@@ -49,6 +49,7 @@
 #define IDC_MASK                        1050
 #define IDC_MESSAGE                     1057
 #define IDC_STATUSBAR                   1059
+#define IDC_FOLDERTREE                  1060
 #define IDA_MYDIR                       40001
 #define IDA_HELP                        40002
 
