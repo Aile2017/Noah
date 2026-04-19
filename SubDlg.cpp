@@ -709,6 +709,7 @@ void CArcViewDlg::LayoutTopRow( int dlgW )
 {
 	const int margin   = 7;
 	const int gap      = 3;
+	const int labelGap = 1;
 	const int groupGap = 7;
 
 	RECT rcLabel, rcEdit, rcRef, rcOK, rcMelt, rcShow, rcInv;
@@ -722,8 +723,6 @@ void CArcViewDlg::LayoutTopRow( int dlgW )
 
 	const int labelW = rcLabel.right - rcLabel.left;
 	const int labelH = rcLabel.bottom - rcLabel.top;
-	const int labelY = 5;
-	const int topY  = 3;
 	const int editH = rcEdit.bottom - rcEdit.top;
 	const int refW  = rcRef.right - rcRef.left;
 	const int refH  = rcRef.bottom - rcRef.top;
@@ -735,13 +734,23 @@ void CArcViewDlg::LayoutTopRow( int dlgW )
 	const int showH = rcShow.bottom - rcShow.top;
 	const int invW  = rcInv.right - rcInv.left;
 	const int invH  = rcInv.bottom - rcInv.top;
+	int topBandH = m_listTop;
+	if( topBandH <= 0 ) topBandH = 20;
+	const int shiftY = 2;
+	const int labelY = (topBandH - labelH) / 2 + shiftY;
+	const int editY  = (topBandH - editH ) / 2 + shiftY;
+	const int refY   = (topBandH - refH  ) / 2 + shiftY;
+	const int okY    = (topBandH - okH   ) / 2 + shiftY;
+	const int meltY  = (topBandH - meltH ) / 2 + shiftY;
+	const int showY  = (topBandH - showH ) / 2 + shiftY;
+	const int invY   = (topBandH - invH  ) / 2 + shiftY;
 
 	int x = dlgW - margin;
 	const int invX  = x - invW;  x = invX  - gap;
 	const int showX = x - showW; x = showX - gap;
 	const int meltX = x - meltW; x = meltX - gap;
 	const int okX   = x - okW;
-	const int editX = margin + labelW + gap;
+	const int editX = margin + labelW + labelGap;
 	const int editW = okX - groupGap - editX - gap - refW;
 	const int browseX = editX + editW + gap;
 
@@ -751,22 +760,22 @@ void CArcViewDlg::LayoutTopRow( int dlgW )
 			margin, labelY, labelW, labelH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_DDIR), NULL,
-			editX, topY, editW, editH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+			editX, editY, editW, editH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_REF), NULL,
-			browseX, topY, refW, refH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+			browseX, refY, refW, refH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDOK), NULL,
-			okX, topY, okW, okH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+			okX, okY, okW, okH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_MELTEACH), NULL,
-			meltX, topY, meltW, meltH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+			meltX, meltY, meltW, meltH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_SHOW), NULL,
-			showX, topY, showW, showH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+			showX, showY, showW, showH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_SELECTINV), NULL,
-			invX, topY, invW, invH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+			invX, invY, invW, invH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
 		::EndDeferWindowPos( hdwp );
 }
