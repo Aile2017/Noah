@@ -917,15 +917,21 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 	for( unsigned int fi=0, k=0; fi!=m_fileIndices.len(); fi++ )
 	{
 		arcfile& af = m_files[ m_fileIndices[fi] ];
+		const char* fn = af.inf.szFileName;
+		const char* lastSep = NULL;
+		for( const char* p=fn; *p; p++ )
+			if( *p=='/' || *p=='\\' ) lastSep = p;
+		int dirLen = lastSep ? (int)(lastSep - fn) + 1 : 0;
 		if( prefix )
 		{
 			// Match only files directly in the selected folder (not subfolders)
-			const char* fn = af.inf.szFileName;
-			const char* lastSep = NULL;
-			for( const char* p=fn; *p; p++ )
-				if( *p=='/' || *p=='\\' ) lastSep = p;
-			int dirLen = lastSep ? (int)(lastSep - fn) + 1 : 0;
 			if( dirLen != prefixLen || !ki_memcmp( fn, prefix, prefixLen ) )
+				continue;
+		}
+		else
+		{
+			// Root selected: show only top-level files (no directory component)
+			if( dirLen != 0 )
 				continue;
 		}
 		ctrl.insertItem( k, kiPath::name(af.inf.szFileName), (LPARAM)(&af),
