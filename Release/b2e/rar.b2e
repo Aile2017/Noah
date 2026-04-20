@@ -19,10 +19,10 @@ sfx:
  (cmd s -sfx (arc))
 
 decode:
- (xcmd 7zG.exe x (arc))
+ (cmd x (arc))
 
 decode1:
- (xcmd 7zG.exe x -y (arc) (list))
+ (cmd x -y (arc) (list))
 
 list:
  (xscan "-----------" 1 "-----------" 1 42 Rar.exe l (arc))
