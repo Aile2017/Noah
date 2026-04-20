@@ -304,6 +304,9 @@ void CNoahArchiverManager::do_listing( kiPath& destdir )
 		CArcViewDlg* x = new CArcViewDlg( m_Melters[i],an,ddir );
 		views.add( x );
 		x->createModeless( NULL );
+		// onInit() shows the window and calls setFront() before the archiver
+		// runs; this re-raise handles the case where focus shifted during listing.
+		kiWindow::setFront( x->hwnd() );
 	}
 
 	//-- Wait until all windows are closed

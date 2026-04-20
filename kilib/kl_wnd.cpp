@@ -95,9 +95,9 @@ void kiWindow::setFront( HWND wnd )
 		DWORD th1 = ::GetWindowThreadProcessId( ::GetForegroundWindow(), &pid );
 		DWORD th2 = ::GetCurrentThreadId();
 		::AttachThreadInput( th2, th1, TRUE );
+		::BringWindowToTop( wnd );
 		::SetForegroundWindow( wnd );
 		::AttachThreadInput( th2, th1, FALSE );
-		::BringWindowToTop( wnd );
 	}
 	else  // Old Windows
 		::SetForegroundWindow( wnd );
