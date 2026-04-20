@@ -20,7 +20,6 @@
 #define IDD_CMPCFG                      117
 #define IDD_MLTCFG                      118
 #define IDD_INFCFG                      120
-#define IDD_PROGRESS                    121
 #define IDD_PASSWORD                    122
 #define IDR_DEFAULT1                    124
 #define IDC_FILELIST                    1000
@@ -43,8 +42,6 @@
 #define IDC_MKDIR2                      1017
 #define IDC_MKDIR3                      1018
 #define IDC_VERSION                     1019
-#define IDC_BAR                         1047
-#define IDC_FNAME                       1048
 #define IDC_EDIT                        1049
 #define IDC_MASK                        1050
 #define IDC_MESSAGE                     1057
