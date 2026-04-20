@@ -80,6 +80,11 @@ int CArcModule::cmd( const char* cmd, bool mini )
 		NULL,NULL, &si,&pi ) )
 		return 0xffff;
 
+	// Grant the child permission to bring its own dialogs to the foreground
+	// (e.g. 7zG.exe's password prompt).  Without this, Windows' foreground
+	// lock keeps Noah's windows on top and the child's dialogs stay behind.
+	::AllowSetForegroundWindow( pi.dwProcessId );
+
 	// Wait for exit
 	::CloseHandle( pi.hThread );
 	while( WAIT_OBJECT_0 != ::WaitForSingleObject( pi.hProcess, 500 ) )
