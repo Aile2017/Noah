@@ -12,7 +12,8 @@ public:
 		: kiDialog( IDD_ARCVIEW ), m_pArc( ptr ),
 		m_fname( fnm ), m_ddir( ddir ), m_hFont( NULL ), m_hHeader( NULL ),
 		m_hTree( NULL ), m_listLeft( 0 ), m_listTop( 0 ),
-		m_bDragging( false ), m_dragX( 0 ), m_dragListLeft( 0 ), m_ghostX( -1 )
+		m_bDragging( false ), m_dragX( 0 ), m_dragListLeft( 0 ), m_ghostX( -1 ),
+		m_folderIconIdx( 0 )
 		{
 			AddRef();
 			myapp().get_tempdir( m_tdir );
@@ -33,18 +34,8 @@ private: //-- Processing as dialog
 			m_ddir.mkdir();
 			m_ddir.beShortPath();
 		}
-	bool setSelection()
-		{
-			bool x=false;
-			LVITEM it;
-			it.mask = (LVIF_PARAM | LVIF_STATE);
-			it.iSubItem = 0;
-			it.stateMask = LVIS_SELECTED;
-			for( it.iItem=0; sendMsgToItem( IDC_FILELIST, LVM_GETITEM, 0, (LPARAM)&it ); it.iItem++ )
-				if( ((arcfile*)it.lParam)->selected = (0!=(LVIS_SELECTED&it.state)) )
-					x = true;
-			return x;
-		}
+	struct listrow { bool isFolder; int idx; };
+	bool setSelection();
 	int hlp_cnt_check();
 	bool m_bAble;
 	HFONT m_hFont;
@@ -62,6 +53,8 @@ private: //-- Processing as dialog
 	kiArray<unsigned int> m_fileIndices;
 	StrArray m_iconExtCache;
 	kiArray<int> m_iconIdxCache;
+	kiArray<listrow> m_rows;
+	int m_folderIconIdx;
 
 private: //-- Helper
 

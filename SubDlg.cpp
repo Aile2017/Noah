@@ -6,6 +6,25 @@
 int CArcViewDlg::st_nLife;
 static const int ARCVIEW_SPLITTER_WIDTH = 3;
 
+// Context pointer used by the static LVM_SORTITEMS callback to resolve
+// folder display names from m_folderPaths while sorting.
+static CArcViewDlg* s_sortCtx = NULL;
+
+// Extract the last path component (without trailing separator) of a folder
+// path that ends in '/' or '\' (e.g. "foo/bar/" -> "bar").
+static void extract_folder_leaf( const char* path, char* out )
+{
+	int pathLen = ::lstrlen( path );
+	int end = pathLen;
+	if( end > 0 && (path[end-1] == '/' || path[end-1] == '\\') ) end--;
+	int start = 0;
+	for( int k = end - 1; k >= 0; k-- )
+		if( path[k] == '/' || path[k] == '\\' ) { start = k + 1; break; }
+	int n = end - start;
+	for( int i = 0; i < n; i++ ) out[i] = path[start + i];
+	out[n] = '\0';
+}
+
 // Subclass proc for the ListView header: gray background + 1px separator line
 static LRESULT CALLBACK HeaderSubclassProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
@@ -156,15 +175,11 @@ BOOL CArcViewDlg::onInit()
 		ctrl.insertColumn( 0, "Name", 160 );
 		ctrl.insertColumn( 1, colHeader, 640 );
 
-		for( unsigned int i=dataStart, k=0; i!=m_files.len(); i++ )
+		// Only build the file-index side table here; ListView population is
+		// deferred to FilterListByFolder (triggered by the initial tree select).
+		for( unsigned int i=dataStart; i!=m_files.len(); i++ )
 			if( m_files[i].isfile )
-			{
 				m_fileIndices.add( i );
-				ctrl.insertItem( k, kiPath::name(m_files[i].inf.szFileName), (LPARAM)(&m_files[i]),
-					cachedIconFor(m_files[i].inf.szFileName) );
-				ctrl.setSubItem( k, 1, m_files[i].rawline );
-				k++;
-			}
 
 		//-- Register drag & drop format
 		FORMATETC fmt;
@@ -206,6 +221,7 @@ BOOL CArcViewDlg::onInit()
 		SHFILEINFO fsi; ::ZeroMemory( &fsi, sizeof(fsi) );
 		::SHGetFileInfo( "folder", FILE_ATTRIBUTE_DIRECTORY, &fsi, sizeof(fsi),
 			SHGFI_SYSICONINDEX | SHGFI_SMALLICON | SHGFI_USEFILEATTRIBUTES );
+		m_folderIconIdx = fsi.iIcon;
 
 		kiPath rootLabel( m_fname.lname );
 		tvis.item.mask    |= TVIF_IMAGE | TVIF_SELECTEDIMAGE;
@@ -215,8 +231,14 @@ BOOL CArcViewDlg::onInit()
 		tvis.item.iSelectedImage = sfi.iIcon;
 		HTREEITEM hAll = (HTREEITEM)::SendMessage( m_hTree, TVM_INSERTITEM, 0, (LPARAM)&tvis );
 		BuildFolderTree( hAll, fsi.iIcon );
+		// Reserve capacity so listrow pointers stored in LVITEM.lParam stay
+		// stable across FilterListByFolder rebuilds.
+		m_rows.alloc( m_fileIndices.len() + m_folderPaths.len() + 1 );
 		::SendMessage( m_hTree, TVM_EXPAND,     TVE_EXPAND,  (LPARAM)hAll );
 		::SendMessage( m_hTree, TVM_SELECTITEM, TVGN_CARET,  (LPARAM)hAll );
+		// Explicit initial population (TVN_SELCHANGED during init may not
+		// be forwarded to this dialog's proc).
+		if( m_bAble ) FilterListByFolder( -1 );
 	}
 
 	//-- Restore saved window size
@@ -496,7 +518,28 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 				return TRUE;
 			}
 			else if( phdr->code==NM_DBLCLK )
+			{
+				NMITEMACTIVATE* pia = (NMITEMACTIVATE*)lp;
+				if( pia->iItem >= 0 )
+				{
+					LVITEM it;
+					it.mask = LVIF_PARAM;
+					it.iItem = pia->iItem;
+					it.iSubItem = 0;
+					if( sendMsgToItem( IDC_FILELIST, LVM_GETITEM, 0, (LPARAM)&it ) )
+					{
+						listrow* r = (listrow*)it.lParam;
+						if( r && r->isFolder
+						 && r->idx >= 0 && (unsigned int)r->idx < m_treeNodes.len() )
+						{
+							::SendMessage( m_hTree, TVM_SELECTITEM, TVGN_CARET,
+								(LPARAM)m_treeNodes[r->idx] );
+							return TRUE;
+						}
+					}
+				}
 				sendMsg( WM_COMMAND, IDC_SHOW );
+			}
 			else if( phdr->code==NM_RCLICK )
 			{
 				clearSelections();
@@ -548,6 +591,30 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			return TRUE;
 
 		case IDC_SHOW: // Show
+			{
+				// If a folder row is selected, navigate into it instead of viewing.
+				LVITEM it;
+				it.mask = LVIF_PARAM | LVIF_STATE;
+				it.iSubItem = 0;
+				it.stateMask = LVIS_SELECTED;
+				int folderTreeIdx = -1;
+				for( it.iItem = 0;
+				     sendMsgToItem( IDC_FILELIST, LVM_GETITEM, 0, (LPARAM)&it );
+				     it.iItem++ )
+				{
+					if( 0 == (LVIS_SELECTED & it.state) ) continue;
+					listrow* r = (listrow*)it.lParam;
+					if( r && r->isFolder )
+					{ folderTreeIdx = r->idx; break; }
+				}
+				if( folderTreeIdx >= 0
+				 && (unsigned int)folderTreeIdx < m_treeNodes.len() )
+				{
+					::SendMessage( m_hTree, TVM_SELECTITEM, TVGN_CARET,
+						(LPARAM)m_treeNodes[folderTreeIdx] );
+					return TRUE;
+				}
+			}
 			clearSelections();
 			if( setSelection() )
 			{
@@ -573,6 +640,47 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 		}
 	}
 	return FALSE;
+}
+
+bool CArcViewDlg::setSelection()
+{
+	bool x = false;
+	LVITEM it;
+	it.mask = LVIF_PARAM | LVIF_STATE;
+	it.iSubItem = 0;
+	it.stateMask = LVIS_SELECTED;
+	for( it.iItem = 0;
+	     sendMsgToItem( IDC_FILELIST, LVM_GETITEM, 0, (LPARAM)&it );
+	     it.iItem++ )
+	{
+		if( 0 == (LVIS_SELECTED & it.state) ) continue;
+		listrow* r = (listrow*)it.lParam;
+		if( !r ) continue;
+		if( r->isFolder )
+		{
+			// Recursively select every file under this folder path.
+			if( r->idx < 0 || (unsigned int)r->idx >= m_folderPaths.len() ) continue;
+			const char* pfx = m_folderPaths[ r->idx ];
+			int pfxLen = ::lstrlen( pfx );
+			for( unsigned int fi = 0; fi < m_fileIndices.len(); fi++ )
+			{
+				arcfile& af = m_files[ m_fileIndices[fi] ];
+				if( (int)::lstrlen(af.inf.szFileName) >= pfxLen
+				 && 0 == ki_memcmp(af.inf.szFileName, pfx, pfxLen) )
+				{
+					af.selected = true;
+					x = true;
+				}
+			}
+		}
+		else
+		{
+			if( r->idx < 0 || (unsigned int)r->idx >= m_fileIndices.len() ) continue;
+			m_files[ m_fileIndices[ r->idx ] ].selected = true;
+			x = true;
+		}
+	}
+	return x;
 }
 
 int CArcViewDlg::hlp_cnt_check()
@@ -610,9 +718,33 @@ int CALLBACK CArcViewDlg::lv_compare( LPARAM p1, LPARAM p2, LPARAM type )
 	bool rev = false;
 	if( type>=10000 )
 		rev=true, type-=10000;
+
+	listrow* r1 = (listrow*)p1;
+	listrow* r2 = (listrow*)p2;
+
+	// Folders always sort above files (regardless of direction).
+	if( r1 && r2 && r1->isFolder != r2->isFolder )
+		return r1->isFolder ? -1 : 1;
+
 	int ans = 0;
 
-	INDIVIDUALINFO *a1=&((arcfile*)p1)->inf, *a2=&((arcfile*)p2)->inf;
+	if( r1 && r2 && r1->isFolder && r2->isFolder )
+	{
+		if( s_sortCtx )
+		{
+			char leaf1[MAX_PATH], leaf2[MAX_PATH];
+			extract_folder_leaf( s_sortCtx->m_folderPaths[r1->idx], leaf1 );
+			extract_folder_leaf( s_sortCtx->m_folderPaths[r2->idx], leaf2 );
+			ans = ::lstrcmpi( leaf1, leaf2 );
+		}
+		return rev ? -ans : ans;
+	}
+
+	// Both are file rows: resolve to arcfile via the context pointer.
+	if( !s_sortCtx || !r1 || !r2 ) return 0;
+	arcfile* f1 = &s_sortCtx->m_files[ s_sortCtx->m_fileIndices[ r1->idx ] ];
+	arcfile* f2 = &s_sortCtx->m_files[ s_sortCtx->m_fileIndices[ r2->idx ] ];
+	INDIVIDUALINFO *a1 = &f1->inf, *a2 = &f2->inf;
 	switch( type )
 	{
 	case 0: //NAME
@@ -652,8 +784,10 @@ int CALLBACK CArcViewDlg::lv_compare( LPARAM p1, LPARAM p2, LPARAM type )
 
 void CArcViewDlg::DoSort( int col )
 {
+	s_sortCtx = this;
 	WPARAM p = col + (m_bSmallFirst[col] ? 0 : 10000);
 	sendMsgToItem( IDC_FILELIST, LVM_SORTITEMS, p, (LPARAM)lv_compare );
+	s_sortCtx = NULL;
 	m_bSmallFirst[col] = !m_bSmallFirst[col];
 }
 
@@ -905,6 +1039,7 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 	kiListView ctrl( this, IDC_FILELIST );
 	::SendMessage( item(IDC_FILELIST), WM_SETREDRAW, FALSE, 0 );
 	::SendMessage( item(IDC_FILELIST), LVM_DELETEALLITEMS, 0, 0 );
+	m_rows.empty();
 
 	const char* prefix    = NULL;
 	int         prefixLen = 0;
@@ -914,7 +1049,69 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 		prefixLen = ::lstrlen( prefix );
 	}
 
-	for( unsigned int fi=0, k=0; fi!=m_fileIndices.len(); fi++ )
+	// Collect immediate child folders of the current prefix. A path in
+	// m_folderPaths ends in a separator, so a direct child has exactly one
+	// separator (at the end) after stripping the prefix.
+	kiArray<unsigned int> childFolders;
+	for( unsigned int j=0; j<m_folderPaths.len(); j++ )
+	{
+		const char* path = m_folderPaths[j];
+		int pathLen = ::lstrlen( path );
+		const char* tail; int tailLen;
+		if( prefix )
+		{
+			if( pathLen <= prefixLen ) continue;
+			if( 0 != ki_memcmp(path, prefix, prefixLen) ) continue;
+			tail = path + prefixLen;
+			tailLen = pathLen - prefixLen;
+		}
+		else
+		{
+			tail = path;
+			tailLen = pathLen;
+		}
+		int sepCount = 0, lastSepPos = -1;
+		for( int k=0; k<tailLen; k++ )
+			if( tail[k]=='/' || tail[k]=='\\' )
+			{ sepCount++; lastSepPos = k; }
+		if( sepCount != 1 || lastSepPos != tailLen - 1 ) continue;
+		childFolders.add( j );
+	}
+
+	// Sort child folders by leaf name (case-insensitive).
+	for( unsigned int a=1; a<childFolders.len(); a++ )
+	{
+		unsigned int key = childFolders[a];
+		char keyLeaf[MAX_PATH];
+		extract_folder_leaf( m_folderPaths[key], keyLeaf );
+		int b = (int)a - 1;
+		while( b >= 0 )
+		{
+			char otherLeaf[MAX_PATH];
+			extract_folder_leaf( m_folderPaths[childFolders[b]], otherLeaf );
+			if( ::lstrcmpi(otherLeaf, keyLeaf) <= 0 ) break;
+			childFolders[b+1] = childFolders[b];
+			b--;
+		}
+		childFolders[b+1] = key;
+	}
+
+	unsigned int k = 0;
+
+	// Insert folder rows first.
+	for( unsigned int a=0; a<childFolders.len(); a++ )
+	{
+		unsigned int fp = childFolders[a];
+		char leaf[MAX_PATH];
+		extract_folder_leaf( m_folderPaths[fp], leaf );
+		listrow lr; lr.isFolder = true; lr.idx = (int)fp;
+		m_rows.add( lr );
+		ctrl.insertItem( k, leaf, (LPARAM)&m_rows[m_rows.len()-1], m_folderIconIdx );
+		k++;
+	}
+
+	// Then insert files directly in the selected folder.
+	for( unsigned int fi=0; fi<m_fileIndices.len(); fi++ )
 	{
 		arcfile& af = m_files[ m_fileIndices[fi] ];
 		const char* fn = af.inf.szFileName;
@@ -924,18 +1121,18 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 		int dirLen = lastSep ? (int)(lastSep - fn) + 1 : 0;
 		if( prefix )
 		{
-			// Match only files directly in the selected folder (not subfolders)
-			if( dirLen != prefixLen || !ki_memcmp( fn, prefix, prefixLen ) )
+			if( dirLen != prefixLen || 0 != ki_memcmp(fn, prefix, prefixLen) )
 				continue;
 		}
 		else
 		{
-			// Root selected: show only top-level files (no directory component)
 			if( dirLen != 0 )
 				continue;
 		}
-		ctrl.insertItem( k, kiPath::name(af.inf.szFileName), (LPARAM)(&af),
-			cachedIconFor(af.inf.szFileName) );
+		listrow lr; lr.isFolder = false; lr.idx = (int)fi;
+		m_rows.add( lr );
+		ctrl.insertItem( k, kiPath::name(af.inf.szFileName),
+			(LPARAM)&m_rows[m_rows.len()-1], cachedIconFor(af.inf.szFileName) );
 		ctrl.setSubItem( k, 1, af.rawline );
 		k++;
 	}
