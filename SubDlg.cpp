@@ -10,6 +10,11 @@ static const int ARCVIEW_SPLITTER_WIDTH = 3;
 // folder display names from m_folderPaths while sorting.
 static CArcViewDlg* s_sortCtx = NULL;
 
+// Binary-search a folder path in m_folderPaths using m_folderSorted. Defined
+// later in this file; forward-declared here for use inside CArcViewDlg::onInit.
+static unsigned int folder_bisect( const StrArray& paths, const kiArray<unsigned int>& sorted,
+	const char* buf, bool* found );
+
 // Extract the last path component (without trailing separator) of a folder
 // path that ends in '/' or '\' (e.g. "foo/bar/" -> "bar").
 static void extract_folder_leaf( const char* path, char* out )
@@ -191,18 +196,6 @@ BOOL CArcViewDlg::onInit()
 		addFormat( fmt );
 	}
 
-	//-- Info --
-	char tmp[255];
-	kiStr full_filename = m_fname.basedir + m_fname.lname;
-	unsigned int fileCount = 0;
-	for( unsigned int i=0; i!=m_files.len(); i++ )
-		if( m_files[i].isfile ) fileCount++;
-	wsprintf( tmp, kiStr().loadRsrc(IDS_ARCVIEW_MSG),
-		fileCount,
-		(const char*)m_pArc->arctype_name(full_filename)
-	);
-	sendMsgToItem( IDC_STATUSBAR, WM_SETTEXT, 0, (LPARAM)tmp );
-
 		if( !m_bAble )
 		{
 			static const UINT items[] = { IDC_SELECTINV,IDC_REF,IDC_MELTEACH,IDC_SHOW,IDC_DDIR,IDC_DDIRLABEL };
@@ -231,6 +224,64 @@ BOOL CArcViewDlg::onInit()
 		tvis.item.iSelectedImage = sfi.iIcon;
 		HTREEITEM hAll = (HTREEITEM)::SendMessage( m_hTree, TVM_INSERTITEM, 0, (LPARAM)&tvis );
 		BuildFolderTree( hAll, fsi.iIcon );
+
+		// Drop standalone directory entries (e.g. 7z "D...." rows) whose name
+		// already exists in the synthesized folder tree, to avoid showing the
+		// same folder both as a file row and as a folder row.
+		{
+			unsigned int write = 0;
+			for( unsigned int read = 0; read < m_fileIndices.len(); read++ )
+			{
+				const char* fn = m_files[ m_fileIndices[read] ].inf.szFileName;
+				int fnLen = ::lstrlen( fn );
+				bool isDirEntry = false;
+				char key[MAX_PATH];
+				bool found = false;
+				if( fnLen > 0 && (fn[fnLen-1] == '/' || fn[fnLen-1] == '\\') )
+				{
+					if( fnLen < MAX_PATH )
+					{
+						::lstrcpy( key, fn );
+						folder_bisect( m_folderPaths, m_folderSorted, key, &found );
+					}
+				}
+				else if( fnLen > 0 && fnLen + 1 < MAX_PATH )
+				{
+					::lstrcpy( key, fn );
+					key[fnLen]   = '\\';
+					key[fnLen+1] = '\0';
+					folder_bisect( m_folderPaths, m_folderSorted, key, &found );
+					if( !found )
+					{
+						key[fnLen] = '/';
+						folder_bisect( m_folderPaths, m_folderSorted, key, &found );
+					}
+				}
+				isDirEntry = found;
+				if( !isDirEntry )
+					m_fileIndices[write++] = m_fileIndices[read];
+				else
+					// Clear the selected/isfile union so this entry is not
+					// passed to the archiver for extraction and is not hit
+					// by the ShellExecute loop in the View handler.
+					m_files[ m_fileIndices[read] ].selected = false;
+			}
+			m_fileIndices.forcelen( write );
+		}
+
+		// Status bar reports the post-filter file count so that directory
+		// entries (e.g. 7z "D...." rows) are not double-counted alongside
+		// the synthesized folder rows.
+		{
+			char tmp[255];
+			kiStr full_filename = m_fname.basedir + m_fname.lname;
+			wsprintf( tmp, kiStr().loadRsrc(IDS_ARCVIEW_MSG),
+				m_fileIndices.len(),
+				(const char*)m_pArc->arctype_name(full_filename)
+			);
+			sendMsgToItem( IDC_STATUSBAR, WM_SETTEXT, 0, (LPARAM)tmp );
+		}
+
 		// Reserve capacity so listrow pointers stored in LVITEM.lParam stay
 		// stable across FilterListByFolder rebuilds.
 		m_rows.alloc( m_fileIndices.len() + m_folderPaths.len() + 1 );
@@ -666,7 +717,7 @@ bool CArcViewDlg::setSelection()
 			{
 				arcfile& af = m_files[ m_fileIndices[fi] ];
 				if( (int)::lstrlen(af.inf.szFileName) >= pfxLen
-				 && 0 == ki_memcmp(af.inf.szFileName, pfx, pfxLen) )
+				 && ki_memcmp(af.inf.szFileName, pfx, pfxLen) )
 				{
 					af.selected = true;
 					x = true;
@@ -1061,7 +1112,7 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 		if( prefix )
 		{
 			if( pathLen <= prefixLen ) continue;
-			if( 0 != ki_memcmp(path, prefix, prefixLen) ) continue;
+			if( !ki_memcmp(path, prefix, prefixLen) ) continue;
 			tail = path + prefixLen;
 			tailLen = pathLen - prefixLen;
 		}
@@ -1121,7 +1172,7 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 		int dirLen = lastSep ? (int)(lastSep - fn) + 1 : 0;
 		if( prefix )
 		{
-			if( dirLen != prefixLen || 0 != ki_memcmp(fn, prefix, prefixLen) )
+			if( dirLen != prefixLen || !ki_memcmp(fn, prefix, prefixLen) )
 				continue;
 		}
 		else
