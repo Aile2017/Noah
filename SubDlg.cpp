@@ -6,10 +6,6 @@
 int CArcViewDlg::st_nLife;
 static const int ARCVIEW_SPLITTER_WIDTH = 3;
 
-// Context pointer used by the static LVM_SORTITEMS callback to resolve
-// folder display names from m_folderPaths while sorting.
-static CArcViewDlg* s_sortCtx = NULL;
-
 // Binary-search a folder path in m_folderPaths using m_folderSorted. Defined
 // later in this file; forward-declared here for use inside CArcViewDlg::onInit.
 static unsigned int folder_bisect( const StrArray& paths, const kiArray<unsigned int>& sorted,
@@ -762,84 +758,6 @@ int CArcViewDlg::hlp_cnt_check()
 			return i;
 		}
 	return -1;
-}
-
-int CALLBACK CArcViewDlg::lv_compare( LPARAM p1, LPARAM p2, LPARAM type )
-{
-	bool rev = false;
-	if( type>=10000 )
-		rev=true, type-=10000;
-
-	listrow* r1 = (listrow*)p1;
-	listrow* r2 = (listrow*)p2;
-
-	// Folders always sort above files (regardless of direction).
-	if( r1 && r2 && r1->isFolder != r2->isFolder )
-		return r1->isFolder ? -1 : 1;
-
-	int ans = 0;
-
-	if( r1 && r2 && r1->isFolder && r2->isFolder )
-	{
-		if( s_sortCtx )
-		{
-			char leaf1[MAX_PATH], leaf2[MAX_PATH];
-			extract_folder_leaf( s_sortCtx->m_folderPaths[r1->idx], leaf1 );
-			extract_folder_leaf( s_sortCtx->m_folderPaths[r2->idx], leaf2 );
-			ans = ::lstrcmpi( leaf1, leaf2 );
-		}
-		return rev ? -ans : ans;
-	}
-
-	// Both are file rows: resolve to arcfile via the context pointer.
-	if( !s_sortCtx || !r1 || !r2 ) return 0;
-	arcfile* f1 = &s_sortCtx->m_files[ s_sortCtx->m_fileIndices[ r1->idx ] ];
-	arcfile* f2 = &s_sortCtx->m_files[ s_sortCtx->m_fileIndices[ r2->idx ] ];
-	INDIVIDUALINFO *a1 = &f1->inf, *a2 = &f2->inf;
-	switch( type )
-	{
-	case 0: //NAME
-		ans = ::lstrcmp( kiPath::name(a1->szFileName),
-			             kiPath::name(a2->szFileName) );
-		break;
-	case 1: //SIZE
-		ans = (signed)a1->dwOriginalSize - (signed)a2->dwOriginalSize;
-		break;
-	case 2: //DATE,TIME
-		ans = (signed)a1->wDate - (signed)a2->wDate;
-		if( ans==0 )
-			ans = (signed)a1->wTime - (signed)a2->wTime;
-		break;
-	case 3:{//RATIO
-		int cr1, cr2;
-		if( a1->dwOriginalSize==0 )        cr1=100;
-		else if( a1->dwCompressedSize==0 ) cr1=-1;
-		else cr1 = (a1->dwCompressedSize*100)/(a1->dwOriginalSize);
-		if( a2->dwOriginalSize==0 )        cr2=100;
-		else if( a2->dwCompressedSize==0 ) cr2=-1;
-		else cr2 = (int)((((__int64)a2->dwCompressedSize)*100)/(a2->dwOriginalSize));
-		ans = cr1 - cr2;
-		}break;
-	case 4: //METHOD
-		ans = ::lstrcmp( a1->szMode, a2->szMode );
-		break;
-	case 5:{//PATH
-		kiPath pt1(a1->szFileName), pt2(a2->szFileName);
-		pt1.beDirOnly(), pt2.beDirOnly();
-		ans = ::lstrcmp( pt1, pt2 );
-		}break;
-	}
-
-	return rev ? -ans : ans;
-}
-
-void CArcViewDlg::DoSort( int col )
-{
-	s_sortCtx = this;
-	WPARAM p = col + (m_bSmallFirst[col] ? 0 : 10000);
-	sendMsgToItem( IDC_FILELIST, LVM_SORTITEMS, p, (LPARAM)lv_compare );
-	s_sortCtx = NULL;
-	m_bSmallFirst[col] = !m_bSmallFirst[col];
 }
 
 void CArcViewDlg::GenerateDirMenu( HMENU m, int& id, StrArray* sx, const kiPath& pth )

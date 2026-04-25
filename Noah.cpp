@@ -5,11 +5,6 @@
 #include "NoahApp.h"
 #include "resource.h"
 
-#if _MSC_VER >= 1300
-extern "C" { int _afxForceEXCLUDE; }
-extern "C" BOOL WINAPI _imp__IsDebuggerPresent() { return FALSE; }
-#endif
-
 // Process instance limit zone
 class ProcessNumLimitZone
 {

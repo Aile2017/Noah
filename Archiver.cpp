@@ -29,12 +29,9 @@ CArcModule::CArcModule( const char* name, bool us )
 
 int CArcModule::cmd( const char* cmd, bool mini )
 {
-	// Check NT etc.
+	// Build shell command prefix
 	kiPath tmpdir;
-	static const bool isNT =
-		(app()->osver().dwPlatformId==VER_PLATFORM_WIN32_NT);
-	static const char* const closeShell =
-		(isNT ? "cmd.exe /c " : "command.com /c ");
+	static const char* const closeShell = "cmd.exe /c ";
 
 	// Build command string
 	kiVar theCmd( m_name );
@@ -49,12 +46,9 @@ int CArcModule::cmd( const char* cmd, bool mini )
 	}
 	else if( m_type==EXEUS )
 	{
-		// US mode case
-		if( isNT )
-		{
-			::SetEnvironmentVariable( "NOAHCMD", theCmd );
-			theCmd = "%NOAHCMD%";
-		}
+		// US mode case: pass command via environment variable
+		::SetEnvironmentVariable( "NOAHCMD", theCmd );
+		theCmd = "%NOAHCMD%";
 
 		// Generate switch batch file
 		myapp().get_tempdir(tmpdir);

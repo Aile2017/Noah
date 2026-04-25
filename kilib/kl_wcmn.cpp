@@ -60,18 +60,6 @@ void kiSUtil::getFolderDlgOfEditBox( HWND wnd, HWND par, const char* title )
 		::SendMessage( wnd, WM_SETTEXT, 0, (LPARAM)str );
 }
 
-int kiSUtil::getSysIcon( const char* ext )
-{
-	kiPath tmp( kiPath::Tmp );
-	tmp += "noahicontest.";
-	tmp += ext;
-
-	SHFILEINFO fi;
-	::SHGetFileInfo( tmp, 0, &fi, sizeof(fi), 
-		SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX );
-	return fi.iIcon;
-}
-
 void kiSUtil::msgLastError( const char* msg )
 {
 	char* pMsg;
@@ -83,31 +71,6 @@ void kiSUtil::msgLastError( const char* msg )
 	else
 		app()->msgBox( pMsg );
 	::LocalFree( pMsg );
-}
-
-void kiSUtil::createShortCut( const kiPath& at, const char* name )
-{
-	::CoInitialize(NULL);
-
-	IShellLink* psl;
-	if( SUCCEEDED(::CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,IID_IShellLink,(void**)&psl)) )
-	{
-		psl->SetPath( kiPath(kiPath::Exe_name) );
-		psl->SetWorkingDirectory( kiPath(kiPath::Exe,false) );
-
-		IPersistFile* ppf;
-		if( SUCCEEDED(psl->QueryInterface(IID_IPersistFile,(void**)&ppf)) )
-		{
-			wchar_t wsz[MAX_PATH]; 
-			kiPath lnkfile( at );
-			lnkfile += name, lnkfile += ".lnk";
-			::MultiByteToWideChar(CP_ACP,0,lnkfile,-1,wsz,MAX_PATH);
-			ppf->Save(wsz,TRUE);
-			ppf->Release();
-		}
-		psl->Release();
-	}
-	::CoUninitialize();
 }
 
 bool kiSUtil::exist( const char* fname )

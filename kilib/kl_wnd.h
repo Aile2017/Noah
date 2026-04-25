@@ -54,8 +54,7 @@ public: //-- Public interface --------------------------
 	static void msg();
 
 	// [static] Run the message loop.
-	enum msglooptype {PEEK, GET};
-	static void msgLoop( msglooptype type = GET );
+	static void msgLoop();
 
 	// [static] Force window to front
 	static void setFront( HWND wnd );

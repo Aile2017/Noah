@@ -227,7 +227,7 @@ public:
 		const char* BL, int BSL, const char* EL, int SL, int dx );
 
 private:
-	enum { NOTEXIST, EXE, EXEUS, SHLCMD=0 } m_type;
+	enum { NOTEXIST=0, EXE, EXEUS, SHLCMD } m_type;
 	char         m_name[MAX_PATH];
 };
 

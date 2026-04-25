@@ -61,13 +61,11 @@ void kiWindow::msg()
 		::TranslateMessage( &msg ), ::DispatchMessage( &msg );
 }
 
-void kiWindow::msgLoop( msglooptype type )
+void kiWindow::msgLoop()
 {
 	kiWindow* wnd;
 	MSG msg;
-	while( !loopbreaker &&
-		  type==GET ?  ::GetMessage( &msg,NULL,0,0 )
-					: ::PeekMessage( &msg,NULL,0,0,PM_REMOVE ) )
+	while( !loopbreaker && ::GetMessage( &msg,NULL,0,0 ) )
 	{
 		if( wnd = app()->mainwnd() )
 		{
@@ -84,25 +82,14 @@ void kiWindow::msgLoop( msglooptype type )
 
 void kiWindow::setFront( HWND wnd )
 {
-	const OSVERSIONINFO& v = app()->osver();
-
-	// Win2000 or later, or Win98 or later
-	if( ( v.dwPlatformId==VER_PLATFORM_WIN32_NT && v.dwMajorVersion>=5 )
-	 || ( v.dwPlatformId==VER_PLATFORM_WIN32_WINDOWS &&
-							v.dwMajorVersion*100+v.dwMinorVersion>=410 ) )
-	{
-		DWORD pid;
-		DWORD th1 = ::GetWindowThreadProcessId( ::GetForegroundWindow(), &pid );
-		DWORD th2 = ::GetCurrentThreadId();
-		::AttachThreadInput( th2, th1, TRUE );
-		::BringWindowToTop( wnd );
-		::SetForegroundWindow( wnd );
-		::AttachThreadInput( th2, th1, FALSE );
-	}
-	else  // Old Windows
-		::SetForegroundWindow( wnd );
-
 	// Special Thanks To kazubon !! ( the author of TClock )
+	DWORD pid;
+	DWORD th1 = ::GetWindowThreadProcessId( ::GetForegroundWindow(), &pid );
+	DWORD th2 = ::GetCurrentThreadId();
+	::AttachThreadInput( th2, th1, TRUE );
+	::BringWindowToTop( wnd );
+	::SetForegroundWindow( wnd );
+	::AttachThreadInput( th2, th1, FALSE );
 }
 
 void kiWindow::setCenter( HWND wnd, HWND rel )

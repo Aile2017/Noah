@@ -103,38 +103,6 @@ void kiFile::write( const void* buf, unsigned long len )
 	m_nBufPos += len;
 }
 
-#undef putc
-void kiFile::putc( unsigned char c )
-{
-	if( m_hFile==INVALID_HANDLE_VALUE || m_bReadMode )
-		return;
-	if( (kifile_bufsize-m_nBufPos) <= 1 )
-		flush();
-	m_pBuf[ m_nBufPos++ ] = c;
-}
-
-#undef getc
-int kiFile::getc()
-{
-	if( m_nBufSize==0 || m_hFile==INVALID_HANDLE_VALUE || !m_bReadMode )
-		return -1;
-
-	if( 0==(m_nBufSize-m_nBufPos) )
-	{
-		flush();
-		if( m_nBufSize==0 )
-			return -1;
-	}
-	if( 1==(m_nBufSize-m_nBufPos) )
-	{
-		int ans = m_pBuf[ m_nBufPos++ ];
-		flush();
-		return ans;
-	}
-
-	return m_pBuf[ m_nBufPos++ ];
-}
-
 void kiFile::flush()
 {
 	if( m_bReadMode )

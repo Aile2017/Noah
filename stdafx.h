@@ -9,7 +9,6 @@
 #undef  _WIN32_IE
 #define _WIN32_IE 0x0200
 #include <windows.h>
-#include <lzexpand.h>
 
 // shell header
 #include <shlobj.h>

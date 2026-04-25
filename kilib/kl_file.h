@@ -23,42 +23,11 @@ public: //-- Public interface --------------------------
 	// Read and write
 	unsigned long read( unsigned char* buf, unsigned long len );
 	void write( const void* buf, unsigned long len );
-	int getc();
-	void putc( unsigned char c );
-
-	// Seek
-	void seekTo( unsigned long pos )
-		{
-			if( !m_bReadMode ) flush();
-			::SetFilePointer( m_hFile, pos, NULL, FILE_BEGIN );
-			if(  m_bReadMode ) flush();
-		}
-	void seek( long pos )
-		{
-			if( !m_bReadMode ) flush();
-			::SetFilePointer( m_hFile,
-				pos-(signed)m_nBufSize+(signed)m_nBufPos, NULL,
-				FILE_CURRENT );
-			if(  m_bReadMode ) flush();
-		}
-	unsigned long tell()
-		{
-			return ::SetFilePointer( m_hFile, 0, NULL, FILE_CURRENT )
-					- m_nBufSize + m_nBufPos;
-		}
 
 	// Get information
-	bool isOpened()
-		{
-			return m_hFile != INVALID_HANDLE_VALUE;
-		}
 	unsigned long getSize( unsigned long* higher=NULL )
 		{
 			return ::GetFileSize( m_hFile, higher );
-		}
-	bool isEOF()
-		{
-			return (m_nBufPos==0 && m_nBufSize==0);
 		}
 
 public: //-- Internal processing -----------------------------------
@@ -73,11 +42,6 @@ public: //-- Internal processing -----------------------------------
 		{
 			close();
 			delete [] m_pBuf;
-		}
-
-	HANDLE getHandle() const
-		{
-			return m_hFile;
 		}
 
 private:

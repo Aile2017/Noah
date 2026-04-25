@@ -85,9 +85,6 @@ private: //-- Drag & drop processing
 
 private: //-- Sort processing
 
-	void DoSort( int col );
-	static int CALLBACK lv_compare( LPARAM p1, LPARAM p2, LPARAM type );
-	bool m_bSmallFirst[6];
 
 private: //-- Right click
 

@@ -105,6 +105,8 @@ public: //-- Public interface --------------------------
 
 private: //-- Internal processing -----------------------------------
 
+	kiArray( const kiArray<T>& );  // copy-prohibited (would double-free)
+
 	T* m_pArray;
 	unsigned long m_Len, m_ALen;
 

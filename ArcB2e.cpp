@@ -91,9 +91,9 @@ int CArcB2e::v_load()
 				else if( ki_memcmp(p,"sfxd:",5) )
 					*p='\0', m_SfxScr = (p+=4)+1, m_SfxDirect=true;
 				else if( ki_memcmp(p,"decode1:",8) )
-					*p='\0', m_DcEScr = (p+=7);
+					*p='\0', m_DcEScr = (p+=7)+1;
 				else if( ki_memcmp(p,"list:",5) )
-					*p='\0', m_LstScr = (p+=4);
+					*p='\0', m_LstScr = (p+=4)+1;
 			}
 			while( *p && *p!='\n' && *p!='\r' )
 				p++;

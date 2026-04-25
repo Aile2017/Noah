@@ -32,7 +32,7 @@ ENTRY_SYMBOL := _Z13kilib_startUpv
 # Windows libs (no CRT startup libs - we use a custom entry point)
 WIN_LIBS := -lkernel32 -luser32 -lgdi32 -lwinspool -lcomdlg32 \
             -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid \
-            -lodbc32 -lodbccp32 -lcomctl32 -llz32 -lversion
+            -lcomctl32 -lversion
 
 # Flags common to all toolchains
 COMMON_FLAGS := \

@@ -310,7 +310,7 @@ void CNoahArchiverManager::do_listing( kiPath& destdir )
 	}
 
 	//-- Wait until all windows are closed
-	kiWindow::msgLoop( kiWindow::GET );
+	kiWindow::msgLoop();
 
 	//-- Done
 	app()->setMainWnd( mptr );
