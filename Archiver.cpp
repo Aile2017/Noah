@@ -136,7 +136,7 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 	// Create pipe (both inherit. Too much hassle to DupHandle...)
 	HANDLE rp, wp;
 	SECURITY_ATTRIBUTES sa = {sizeof(SECURITY_ATTRIBUTES),NULL,TRUE};
-	::CreatePipe( &rp, &wp, &sa, 4096 );
+	::CreatePipe( &rp, &wp, &sa, 65536 );
 
 	// Start process
 	PROCESS_INFORMATION pi;
@@ -158,20 +158,27 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 	}
 	::CloseHandle( pi.hThread );
 
-	// Parsing etc. (buffer must be at least 2x the pipe size)
+	// Parsing etc.
 	char buf[8192], *end=buf;
 	char header_line[256] = "";  // last non-empty pre-separator line (used as column header)
-	for( bool endpr=false; !endpr; )
+	bool endpr = false;
+	for(;;)
 	{
-		// Wait
-		endpr = (WAIT_OBJECT_0==::WaitForSingleObject(pi.hProcess,500));
-		kiWindow::msg();
+		// Wait (only while process is still running)
+		if( !endpr )
+		{
+			endpr = (WAIT_OBJECT_0==::WaitForSingleObject(pi.hProcess,50));
+			kiWindow::msg();
+		}
 
-		// Read from pipe
+		// Read from pipe; exit only when process has exited AND pipe is fully drained
 		DWORD red;
 		::PeekNamedPipe( rp, NULL, 0, NULL, &red, NULL );
 		if( red==0 )
+		{
+			if( endpr ) break;
 			continue;
+		}
 		const DWORD cbAvail = static_cast<DWORD>((buf+sizeof(buf))-end);
 		::ReadFile( rp, end, cbAvail, &red, NULL );
 		end += red;
