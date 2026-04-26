@@ -221,6 +221,10 @@ BOOL CArcViewDlg::onInit()
 		HTREEITEM hAll = (HTREEITEM)::SendMessage( m_hTree, TVM_INSERTITEM, 0, (LPARAM)&tvis );
 		BuildFolderTree( hAll, fsi.iIcon );
 
+		// Initialize m_folderRawlines as parallel to m_folderPaths (all empty).
+		for( unsigned int _i = 0; _i < m_folderPaths.len(); _i++ )
+			m_folderRawlines.add( kiStr() );
+
 		// Drop standalone directory entries (e.g. 7z "D...." rows) whose name
 		// already exists in the synthesized folder tree, to avoid showing the
 		// same folder both as a file row and as a folder row.
@@ -233,12 +237,13 @@ BOOL CArcViewDlg::onInit()
 				bool isDirEntry = false;
 				char key[MAX_PATH];
 				bool found = false;
+				unsigned int bisectPos = 0;
 				if( fnLen > 0 && (fn[fnLen-1] == '/' || fn[fnLen-1] == '\\') )
 				{
 					if( fnLen < MAX_PATH )
 					{
 						::lstrcpy( key, fn );
-						folder_bisect( m_folderPaths, m_folderSorted, key, &found );
+						bisectPos = folder_bisect( m_folderPaths, m_folderSorted, key, &found );
 					}
 				}
 				else if( fnLen > 0 && fnLen + 1 < MAX_PATH )
@@ -246,21 +251,31 @@ BOOL CArcViewDlg::onInit()
 					::lstrcpy( key, fn );
 					key[fnLen]   = '\\';
 					key[fnLen+1] = '\0';
-					folder_bisect( m_folderPaths, m_folderSorted, key, &found );
+					bisectPos = folder_bisect( m_folderPaths, m_folderSorted, key, &found );
 					if( !found )
 					{
 						key[fnLen] = '/';
-						folder_bisect( m_folderPaths, m_folderSorted, key, &found );
+						bisectPos = folder_bisect( m_folderPaths, m_folderSorted, key, &found );
 					}
 				}
 				isDirEntry = found;
 				if( !isDirEntry )
 					m_fileIndices[write++] = m_fileIndices[read];
 				else
+				{
 					// Clear the selected/isfile union so this entry is not
 					// passed to the archiver for extraction and is not hit
 					// by the ShellExecute loop in the View handler.
 					m_files[ m_fileIndices[read] ].selected = false;
+					// Capture rawline for the folder row's info column.
+					const char* raw = m_files[ m_fileIndices[read] ].rawline;
+					if( raw[0] && bisectPos < m_folderSorted.len() )
+					{
+						unsigned int fi = m_folderSorted[bisectPos];
+						if( fi < m_folderRawlines.len() )
+							m_folderRawlines[fi] = kiStr( raw );
+					}
+				}
 			}
 			m_fileIndices.forcelen( write );
 		}
@@ -576,11 +591,15 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 					if( sendMsgToItem( IDC_FILELIST, LVM_GETITEM, 0, (LPARAM)&it ) )
 					{
 						listrow* r = (listrow*)it.lParam;
-						if( r && r->isFolder
-						 && r->idx >= 0 && (unsigned int)r->idx < m_treeNodes.len() )
+						if( r && r->isFolder )
 						{
-							::SendMessage( m_hTree, TVM_SELECTITEM, TVGN_CARET,
-								(LPARAM)m_treeNodes[r->idx] );
+							HTREEITEM hTarget = NULL;
+							if( r->idx < 0 )
+								hTarget = (HTREEITEM)::SendMessage( m_hTree, TVM_GETNEXTITEM, TVGN_ROOT, 0 );
+							else if( (unsigned int)r->idx < m_treeNodes.len() )
+								hTarget = m_treeNodes[r->idx];
+							if( hTarget )
+								::SendMessage( m_hTree, TVM_SELECTITEM, TVGN_CARET, (LPARAM)hTarget );
 							return TRUE;
 						}
 					}
@@ -644,6 +663,7 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 				it.mask = LVIF_PARAM | LVIF_STATE;
 				it.iSubItem = 0;
 				it.stateMask = LVIS_SELECTED;
+				bool folderFound = false;
 				int folderTreeIdx = -1;
 				for( it.iItem = 0;
 				     sendMsgToItem( IDC_FILELIST, LVM_GETITEM, 0, (LPARAM)&it );
@@ -652,13 +672,17 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 					if( 0 == (LVIS_SELECTED & it.state) ) continue;
 					listrow* r = (listrow*)it.lParam;
 					if( r && r->isFolder )
-					{ folderTreeIdx = r->idx; break; }
+					{ folderFound = true; folderTreeIdx = r->idx; break; }
 				}
-				if( folderTreeIdx >= 0
-				 && (unsigned int)folderTreeIdx < m_treeNodes.len() )
+				if( folderFound )
 				{
-					::SendMessage( m_hTree, TVM_SELECTITEM, TVGN_CARET,
-						(LPARAM)m_treeNodes[folderTreeIdx] );
+					HTREEITEM hTarget = NULL;
+					if( folderTreeIdx < 0 )
+						hTarget = (HTREEITEM)::SendMessage( m_hTree, TVM_GETNEXTITEM, TVGN_ROOT, 0 );
+					else if( (unsigned int)folderTreeIdx < m_treeNodes.len() )
+						hTarget = m_treeNodes[folderTreeIdx];
+					if( hTarget )
+						::SendMessage( m_hTree, TVM_SELECTITEM, TVGN_CARET, (LPARAM)hTarget );
 					return TRUE;
 				}
 			}
@@ -1067,6 +1091,34 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 
 	unsigned int k = 0;
 
+	// Insert ".." entry when browsing a subfolder.
+	if( prefix )
+	{
+		int parentIdx = -1;
+		{
+			int end = prefixLen - 1;
+			while( end > 0 && prefix[end-1] != '/' && prefix[end-1] != '\\' )
+				end--;
+			if( end > 0 && end < MAX_PATH )
+			{
+				char pbuf[MAX_PATH];
+				::CopyMemory( pbuf, prefix, end );
+				pbuf[end] = '\0';
+				bool pfound;
+				unsigned int ppos = folder_bisect( m_folderPaths, m_folderSorted, pbuf, &pfound );
+				if( pfound )
+					parentIdx = (int)m_folderSorted[ppos];
+			}
+		}
+		listrow lr; lr.isFolder = true; lr.idx = parentIdx;
+		m_rows.add( lr );
+		ctrl.insertItem( k, "..", (LPARAM)&m_rows[m_rows.len()-1], m_folderIconIdx );
+		if( parentIdx >= 0 && (unsigned int)parentIdx < m_folderRawlines.len()
+		 && ((const char*)m_folderRawlines[parentIdx])[0] )
+			ctrl.setSubItem( k, 1, (const char*)m_folderRawlines[parentIdx] );
+		k++;
+	}
+
 	// Insert folder rows first.
 	for( unsigned int a=0; a<childFolders.len(); a++ )
 	{
@@ -1076,6 +1128,8 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 		listrow lr; lr.isFolder = true; lr.idx = (int)fp;
 		m_rows.add( lr );
 		ctrl.insertItem( k, leaf, (LPARAM)&m_rows[m_rows.len()-1], m_folderIconIdx );
+		if( fp < m_folderRawlines.len() && ((const char*)m_folderRawlines[fp])[0] )
+			ctrl.setSubItem( k, 1, (const char*)m_folderRawlines[fp] );
 		k++;
 	}
 

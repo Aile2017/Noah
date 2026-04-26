@@ -48,6 +48,7 @@ private: //-- Processing as dialog
 	int   m_dragListLeft;
 	int   m_ghostX;
 	StrArray m_folderPaths;
+	StrArray m_folderRawlines;
 	kiArray<HTREEITEM> m_treeNodes;
 	kiArray<unsigned int> m_folderSorted;  // sorted indices into m_folderPaths (for binary search)
 	kiArray<unsigned int> m_fileIndices;
