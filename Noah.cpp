@@ -198,7 +198,8 @@ void CNoahApp::do_files( const cCharArray& files,
 
 	if( whattodo == melt )
 	{
-		//-- Extraction settings already loaded by m_cnfMan.init()...
+		//-- Load-INI( extraction settings )
+		m_cnfMan.load( Melt );
 
 		if( destdir.len()==0 )
 		{
