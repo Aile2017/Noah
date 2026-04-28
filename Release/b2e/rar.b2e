@@ -25,4 +25,4 @@ decode1:
  (cmd x -y (arc) (list))
 
 list:
- (xscan "-----------" 1 "-----------" 1 42 Rar.exe l (arc))
+ (xscan "-----------" 1 "-----------" 1 68 Rar.exe v (arc))
