@@ -1113,9 +1113,6 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 		listrow lr; lr.isFolder = true; lr.idx = parentIdx;
 		m_rows.add( lr );
 		ctrl.insertItem( k, "..", (LPARAM)&m_rows[m_rows.len()-1], m_folderIconIdx );
-		if( (unsigned int)folderIdx < m_folderRawlines.len()
-		 && ((const char*)m_folderRawlines[folderIdx])[0] )
-			ctrl.setSubItem( k, 1, (const char*)m_folderRawlines[folderIdx] );
 		k++;
 	}
 
