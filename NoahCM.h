@@ -74,8 +74,10 @@ public: //-- Operations
 	void dialog();
 
 public: //-- Generic INI accessors (for per-dialog persistence)
-	int  getInt( const char* key, int defval ) { return m_Ini.getInt(key, defval); }
-	void putInt( const char* key, int val )    { m_Ini.putInt(key, val); }
+	int         getInt( const char* key, int defval )         { return m_Ini.getInt(key, defval); }
+	void        putInt( const char* key, int val )            { m_Ini.putInt(key, val); }
+	const char* getStr( const char* key, const char* defval ) { return m_Ini.getStr(key, defval); }
+	void        putStr( const char* key, const char* val )    { m_Ini.putStr(key, val); }
 
 public: //-- Interface for getting settings items
 

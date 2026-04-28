@@ -114,7 +114,8 @@ BOOL CArcViewDlg::onInit()
 		::GetObject( (HFONT)sendMsg(WM_GETFONT), sizeof(lf), &lf );
 		lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
 		lf.lfCharSet = DEFAULT_CHARSET;
-		ki_strcpy( lf.lfFaceName, "Consolas" );
+		const char* fontName = mycnf().getStr( "ArcViewFont", "Consolas" );
+		ki_strcpy( lf.lfFaceName, fontName );
 		m_hFont = ::CreateFontIndirect( &lf );
 	}
 	::SendMessage( item(IDC_FILELIST), WM_SETFONT, (WPARAM)m_hFont, TRUE );
