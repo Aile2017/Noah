@@ -99,6 +99,8 @@ void CNoahConfigManager::save()
 	m_Ini.putBool( "MODir",  m_MODir );
 	m_Ini.putBool( "CODir",  m_CODir );
 	m_Ini.putStr(  "OpenBy", m_OpenBy );
+	//-- Archive viewer
+	m_Ini.putStr( "ArcViewFont", m_Ini.getStr( "ArcViewFont", "Consolas" ) );
 }
 
 void CNoahConfigManager::dialog()
