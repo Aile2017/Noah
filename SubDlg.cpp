@@ -383,14 +383,14 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			::GetClientRect( hwnd(), &client );
 			int frameW = (self.right-self.left) - (client.right-client.left);
 			POINT& sz = ((MINMAXINFO*)lp)->ptMinTrackSize;
+			RECT ref; ::GetWindowRect( item(IDC_REF), &ref );
 			if( m_bShowToolbar )
 			{
-				RECT label,melt,show,sett,ref;
+				RECT label,melt,show,sett;
 				::GetWindowRect( item(IDC_DDIRLABEL), &label );
 				::GetWindowRect( item(IDC_MELTEACH),  &melt );
 				::GetWindowRect( item(IDC_SHOW),      &show );
 				::GetWindowRect( item(IDC_SETTINGS),  &sett );
-				::GetWindowRect( item(IDC_REF),       &ref );
 				const int minEdit = 100;
 				const int margin = 4, gap = 2, groupGap = 10, labelGap = -8;
 				int minClientW = margin
@@ -405,7 +405,6 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			{
 				sz.x = 200 + frameW;
 			}
-			RECT ref; ::GetWindowRect( item(IDC_REF), &ref );
 			sz.y = ref.bottom - self.top + 100;
 		}
 		return TRUE;
@@ -1579,8 +1578,8 @@ void CArcViewDlg::handleDroppedFile( const char* path )
 
 void CArcViewDlg::updateMRU( const char* fullpath )
 {
-	rememberMRU( fullpath );
-	load_mru_list( m_mruList );
+	push_mru_entry( m_mruList, fullpath );
+	persist_mru_list( m_mruList );
 	rebuildMRUMenu();
 }
 

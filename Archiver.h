@@ -5,7 +5,7 @@
 #define AFX_ARCHIVER_H__359A2ED3_2F97_480E_BC94_24834EBA6498__INCLUDED_
 
 enum {
-	aCheck = 1, aMelt = 2, aList = 4, aMeltEach = 8, aCompress = 16, aArchive = 32, aSfx = 64,
+	aMelt = 2, aList = 4, aMeltEach = 8, aCompress = 16, aArchive = 32, aSfx = 64,
 };
 enum {
 	aUnknown=0, aSingleFile, aSingleDir, aMulti
@@ -47,7 +47,6 @@ public: //--< attribute >--
 
 public: //--< action >--
 
-	bool check( const kiPath& aname );
 	int  contents( const kiPath& aname, kiPath& dname );
 	int  melt( const arcname& aname, const kiPath& ddir, const aflArray* files=NULL );
 	bool list( const arcname& aname, aflArray& files );
@@ -62,7 +61,6 @@ protected: //--< for child >--
 
 	virtual int  v_load(){return 0;}
 	virtual bool v_ver( kiStr& str ){return false;}
-	virtual bool v_check( const kiPath& aname ){return false;}
 	virtual int  v_contents( const kiPath& aname, kiPath& dname ){return aUnknown;}
 	virtual int  v_melt( const arcname& aname, const kiPath& ddir, const aflArray* files ){return false;}
 	virtual bool v_list( const arcname& aname, aflArray& files ){return false;}
@@ -102,11 +100,6 @@ inline int CArchiver::cancompressby( const char* ext, const char* mhd, bool sfx 
 	return -2; // only - 'type name' matched
 }
 
-inline bool CArchiver::check( const kiPath& aname )
-{
-	ensure_loaded();
-	return (m_Able&aCheck)?v_check(aname):false;
-}
 
 inline int CArchiver::contents( const kiPath& aname, kiPath& dname )
 {

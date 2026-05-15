@@ -100,31 +100,10 @@ bool CNoahArchiverManager::map_melters( int mode ) // 1:cmp 2:mlt 3:must_mlt
 			//-- First select one candidate A by extension match
 			CArchiver* x = fromExt( ext=kiPath::ext(lname) );
 
-			//-- Check candidate A against file contents
-			if( x && x->check( fnm ) )
+			if( x )
 			{
 				m_Melters.add( x );
 				continue;
-			}
-
-			//-- Use candidate A if it cannot do content check
-			if( x && !(x->ability() & aCheck) )
-			{
-				m_Melters.add( x );
-				continue;
-			}
-
-			//-- If candidate A fails, try all other content-checkable routines
-			if( mode!=1 || 0==ki_strcmpi( "exe", ext ) )
-			{
-				for( unsigned long j=0; j!=m_AList.len(); j++ )
-					if( m_AList[j]!=x && m_AList[j]->check( fnm ) )
-					{
-						m_Melters.add( m_AList[j] );
-						break;
-					}
-				if( m_Melters.len() == ct+1 )
-					continue;
 			}
 		}
 
@@ -146,24 +125,8 @@ bool CNoahArchiverManager::map_melters( int mode ) // 1:cmp 2:mlt 3:must_mlt
 
 CArchiver* CNoahArchiverManager::find_melter_for( const kiPath& fullpath )
 {
-	//-- First try a candidate selected by extension match
 	const char* ext = fullpath.ext();
-	CArchiver* cand = ext ? fromExt( ext ) : NULL;
-	if( cand )
-	{
-		//-- Accept it directly if it cannot do a content check
-		if( !(cand->ability() & aCheck) )
-			return cand;
-		if( cand->check( fullpath ) )
-			return cand;
-	}
-
-	//-- Otherwise try every content-checkable routine
-	for( unsigned int i=0; i!=m_AList.len(); i++ )
-		if( (m_AList[i]->ability() & aCheck) && m_AList[i]->check( fullpath ) )
-			return m_AList[i];
-
-	return NULL;
+	return ext ? fromExt( ext ) : NULL;
 }
 
 //----------------------------------------------//
