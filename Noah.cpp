@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "NoahApp.h"
+#include "SubDlg.h"
 #include "resource.h"
 
 // Process instance limit zone
@@ -47,13 +48,21 @@ void CNoahApp::run( kiCmdParser& cmd )
 	//-- Retain command line parameters
 	m_pCmd = &cmd;
 
-	//-- Show settings dialog if no files given or Shift was held at startup
-	if( cmd.param().len()==0 || keyPushed(VK_SHIFT) )
+	if( cmd.param().len()==0 )
 	{
 		//-- Load-INI ( all )
 		m_cnfMan.load( All );
-		//-- Show settings screen
-		m_cnfMan.dialog();
+		{
+			//-- No args: open empty archive viewer as main window
+			CArcViewDlg::clear();
+			kiPath ddir( m_cnfMan.mdir() );
+			CArcViewDlg* view = new CArcViewDlg( ddir );
+			view->createModeless( NULL );
+			setMainWnd( view );
+			if( view->isAlive() )
+				kiWindow::msgLoop();
+			delete view;
+		}
 	}
 	else
 	{
@@ -112,11 +121,9 @@ void CNoahApp::do_files( const cCharArray& files,
 		return;
 
 	//-- Working variables
-	enum { unknown, melt, compress }
+	enum { unknown, melt, view, compress }
 			whattodo = unknown;
-	bool	ctrl_mlt = keyPushed( VK_CONTROL );
-	bool	ctrl_cmp = ctrl_mlt;
-	bool	alt      = keyPushed( VK_MENU ) || keyPushed( VK_RWIN ) || keyPushed( VK_LWIN );
+	bool	alt      = false;
 	const char *cmptype=NULL, *method=NULL;
 	kiPath  destdir;
 	kiStr tmp(300);
@@ -143,56 +150,30 @@ void CNoahApp::do_files( const cCharArray& files,
 
 			case 'm':	if( !basicaly_ignore )
 			case 'M':		method = (*opts)[i]+2;	break;
-
-			case 'c':	if( !basicaly_ignore ) {
-			case 'C':		if((*opts)[i][2]!='x') ctrl_cmp = true;
-							if((*opts)[i][2]!='a') ctrl_mlt = true;
-						break;}
 			}
 
-	//-- Load-INI ( operation mode settings )
+	//-- Load-INI ( mode-adjacent settings: MiniBoot, OldVer, etc. )
 	m_cnfMan.load( Mode );
 
-	//-- Decide whether to compress or extract. Flow is as follows.
-	//
-	// - If compression is specified on the command line, always compress.
-	//
-	// - Otherwise, first get Noah's operation mode.
-	//   m0:compress-only  m1:compress-preferred  m2:extract-preferred  m3:extract-only
-	//   If extraction is specified on the command line, use m3.
-	//   If not specified, read from m_cnfMan.
-	//
-	// - Unconditionally compress if m0, or if m1 and multiple files.
-	//
-	// - Otherwise, try to assign an extraction routine.
-	//   For modes other than m3, any assignment failure falls back to compression.
-	//   For m3, if nothing can be assigned, report an error and exit.
+	//-- Decide action:
+	//   unknown + single archive  -> open in viewer
+	//   unknown + multiple files or non-archive -> compress
+	//   -x explicit -> extract (do_melting)
+	//   -a explicit -> compress
 
-	if( whattodo != compress )
+	if( whattodo == unknown )
 	{
-		int mode = 3;
-		if( whattodo != melt )
-			mode = m_cnfMan.mode();
-
-		if( mode==0 || ( mode==1 && m_arcMan.file_num()>=2 ) )
-			whattodo = compress;
+		if( m_arcMan.file_num() == 1 && m_arcMan.map_melters( 2 ) )
+			whattodo = view;
 		else
+			whattodo = compress;
+	}
+	else if( whattodo == melt )
+	{
+		if( !m_arcMan.map_melters( 3 ) )
 		{
-			//-- Try assigning extraction routine
-			bool suc = m_arcMan.map_melters( mode );
-			if( suc )
-				whattodo = melt;
-			else
-			{
-				if( mode != 3 )
-					whattodo = compress;
-				else
-				{
-					//-- Extract-only mode but extraction is impossible!!
-					msgBox( tmp.loadRsrc(IDS_M_ERROR) );
-					return;
-				}
-			}
+			msgBox( tmp.loadRsrc(IDS_M_ERROR) );
+			return;
 		}
 	}
 
@@ -203,7 +184,6 @@ void CNoahApp::do_files( const cCharArray& files,
 
 		if( destdir.len()==0 )
 		{
-			//-- Get extraction destination directory
 			if( m_cnfMan.mdirsm() )
 				if( is_writable_dir(m_arcMan.get_basepath()) )
 					destdir = m_arcMan.get_basepath();
@@ -211,12 +191,24 @@ void CNoahApp::do_files( const cCharArray& files,
 				destdir = m_cnfMan.mdir();
 		}
 
-		//-- Extract
-		if( ctrl_mlt )	m_arcMan.do_listing( destdir );
-		else {
-			ProcessNumLimitZone zone( mycnf().multiboot_limit(), "LimitterForNoahAtKmonosNet" );
-			m_arcMan.do_melting( destdir );
+		ProcessNumLimitZone zone( mycnf().multiboot_limit(), "LimitterForNoahAtKmonosNet" );
+		m_arcMan.do_melting( destdir );
+	}
+	else if( whattodo == view )
+	{
+		//-- Load-INI( extraction settings for destination )
+		m_cnfMan.load( Melt );
+
+		if( destdir.len()==0 )
+		{
+			if( m_cnfMan.mdirsm() )
+				if( is_writable_dir(m_arcMan.get_basepath()) )
+					destdir = m_arcMan.get_basepath();
+			if( destdir.len()==0 )
+				destdir = m_cnfMan.mdir();
 		}
+
+		m_arcMan.do_listing( destdir );
 	}
 	else
 	{
@@ -225,7 +217,6 @@ void CNoahApp::do_files( const cCharArray& files,
 
 		if( destdir.len()==0 )
 		{
-			//-- Get compression destination directory
 			if( m_cnfMan.cdirsm() )
 				if( is_writable_dir(m_arcMan.get_basepath()) )
 					destdir = m_arcMan.get_basepath();
@@ -236,15 +227,12 @@ void CNoahApp::do_files( const cCharArray& files,
 		else if( !method ) method = "";
 		if( !method  ) method  = m_cnfMan.cmhd();
 
-		//-- Assign compression routine
-		if( !m_arcMan.map_compressor( cmptype, method, ctrl_cmp ) )
+		if( !m_arcMan.map_compressor( cmptype, method, false ) )
 		{
-			//-- Incompressible format!!
 			msgBox( tmp.loadRsrc(IDS_C_ERROR) );
 			return;
 		}
 
-		//-- Compress
 		ProcessNumLimitZone zone( mycnf().multiboot_limit(), "LimitterForNoahAtKmonosNet" );
 		m_arcMan.do_compressing( destdir, alt );
 	}

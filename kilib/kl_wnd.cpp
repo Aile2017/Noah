@@ -69,6 +69,8 @@ void kiWindow::msgLoop()
 	{
 		if( wnd = app()->mainwnd() )
 		{
+			// Translate accelerators before IsDialogMessage so modeless dialogs
+			// can receive Ctrl+O / Ctrl+F / F1.
 			if( wnd->m_hAccel )
 				if( ::TranslateAccelerator( wnd->hwnd(), wnd->m_hAccel, &msg ) )
 					continue;
@@ -434,4 +436,3 @@ void kiPropSheetPage::setInfo( PROPSHEETPAGE* p )
 		p->hIcon = m_hIcon;
 	}
 }
-

@@ -141,6 +141,32 @@ bool CNoahArchiverManager::map_melters( int mode ) // 1:cmp 2:mlt 3:must_mlt
 }
 
 //----------------------------------------------//
+//--- Find an extraction routine for one file ---//
+//----------------------------------------------//
+
+CArchiver* CNoahArchiverManager::find_melter_for( const kiPath& fullpath )
+{
+	//-- First try a candidate selected by extension match
+	const char* ext = fullpath.ext();
+	CArchiver* cand = ext ? fromExt( ext ) : NULL;
+	if( cand )
+	{
+		//-- Accept it directly if it cannot do a content check
+		if( !(cand->ability() & aCheck) )
+			return cand;
+		if( cand->check( fullpath ) )
+			return cand;
+	}
+
+	//-- Otherwise try every content-checkable routine
+	for( unsigned int i=0; i!=m_AList.len(); i++ )
+		if( (m_AList[i]->ability() & aCheck) && m_AList[i]->check( fullpath ) )
+			return m_AList[i];
+
+	return NULL;
+}
+
+//----------------------------------------------//
 //--- Assign compression routine to file list ---//
 //----------------------------------------------//
 
@@ -295,13 +321,20 @@ void CNoahArchiverManager::do_listing( kiPath& destdir )
 		if( !m_Melters[i] )
 			continue;
 
-		arcname an( m_BasePathList[i], m_FName[i].cAlternateFileName, m_FName[i].cFileName );
+		kiPath arcpath( m_BasePathList[i] );
+		arcpath += m_FName[i].cFileName;
+		CArcViewDlg::rememberMRU( arcpath );
+
 		ddir = destdir;
 
 		if( mdf )
 			generate_dirname( m_FName[i].cFileName, ddir, rmn );
 
-		CArcViewDlg* x = new CArcViewDlg( m_Melters[i],an,ddir );
+		CArcViewDlg* x = new CArcViewDlg( m_Melters[i],
+			m_BasePathList[i],
+			m_FName[i].cAlternateFileName,
+			m_FName[i].cFileName,
+			ddir );
 		views.add( x );
 		x->createModeless( NULL );
 		// onInit() shows the window and calls setFront() before the archiver

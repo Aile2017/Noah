@@ -8,22 +8,48 @@
 class CArcViewDlg : public kiDialog, kiDataObject
 {
 public:
-	CArcViewDlg( CArchiver* ptr,arcname& fnm,const kiPath& ddir )
+	// Open with a specific archive
+	CArcViewDlg( CArchiver* ptr, const kiPath& base, const char* sname,
+	             const char* lname, const kiPath& ddir )
 		: kiDialog( IDD_ARCVIEW ), m_pArc( ptr ),
-		m_fname( fnm ), m_ddir( ddir ), m_hFont( NULL ), m_hHeader( NULL ),
+		m_arcBaseDir( base ), m_arcLongName( lname ), m_arcShortName( sname ),
+		m_ddir( ddir ), m_hFont( NULL ),
+		m_hBmpExtract( NULL ), m_hBmpView( NULL ), m_hBmpSettings( NULL ),
+		m_hHeader( NULL ),
 		m_hTree( NULL ), m_listLeft( 0 ), m_listTop( 0 ),
 		m_bDragging( false ), m_dragX( 0 ), m_dragListLeft( 0 ), m_ghostX( -1 ),
-		m_folderIconIdx( 0 )
+		m_folderIconIdx( 0 ), m_bAble( false ),
+		m_bShowToolbar( true ), m_bShowTree( true ),
+		m_topRowH( 0 ), m_defaultListLeft( 0 ), m_hMenu( NULL ),
+		m_bLoading( false ), m_sortDir( 0 ), m_curFolderIdx( -1 )
 		{
 			AddRef();
 			myapp().get_tempdir( m_tdir );
 		}
 
+	// Empty viewer (no archive loaded at start)
+	CArcViewDlg( const kiPath& ddir )
+		: kiDialog( IDD_ARCVIEW ), m_pArc( NULL ),
+		m_ddir( ddir ), m_hFont( NULL ),
+		m_hBmpExtract( NULL ), m_hBmpView( NULL ), m_hBmpSettings( NULL ),
+		m_hHeader( NULL ),
+		m_hTree( NULL ), m_listLeft( 0 ), m_listTop( 0 ),
+		m_bDragging( false ), m_dragX( 0 ), m_dragListLeft( 0 ), m_ghostX( -1 ),
+		m_folderIconIdx( 0 ), m_bAble( false ),
+		m_bShowToolbar( true ), m_bShowTree( true ),
+		m_topRowH( 0 ), m_defaultListLeft( 0 ), m_hMenu( NULL ),
+		m_bLoading( false ), m_sortDir( 0 ), m_curFolderIdx( -1 )
+		{
+			AddRef();
+			myapp().get_tempdir( m_tdir );
+		}
+
+	static void rememberMRU( const char* fullpath );
+
 private: //-- Processing as dialog
 
 	BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp );
 	BOOL onInit();
-	bool onOK();
 	bool onCancel();
 	void setdir()
 		{
@@ -37,10 +63,14 @@ private: //-- Processing as dialog
 	struct listrow { bool isFolder; int idx; };
 	bool setSelection();
 	int hlp_cnt_check();
-	bool m_bAble;
-	HFONT m_hFont;
-	HWND  m_hHeader;
-	HWND  m_hTree;
+	void openSelected();
+	bool    m_bAble;
+	HFONT   m_hFont;
+	HBITMAP m_hBmpExtract;
+	HBITMAP m_hBmpView;
+	HBITMAP m_hBmpSettings;
+	HWND    m_hHeader;
+	HWND    m_hTree;
 	int   m_listLeft;
 	int   m_listTop;
 	bool  m_bDragging;
@@ -56,6 +86,17 @@ private: //-- Processing as dialog
 	kiArray<int> m_iconIdxCache;
 	kiArray<listrow> m_rows;
 	int m_folderIconIdx;
+
+	// Toolbar/tree toggle state
+	bool  m_bShowToolbar;
+	bool  m_bShowTree;
+	int   m_topRowH;         // saved m_listTop from onInit (for toolbar restore)
+	int   m_defaultListLeft; // saved m_listLeft from onInit (for tree restore)
+	HMENU m_hMenu;
+	StrArray m_mruList;      // MRU paths, index 0 = most recent (max 10)
+	bool  m_bLoading;        // true while archive list is being built
+	int   m_sortDir;         // 0=archive order, 1=name asc, -1=name desc
+	int   m_curFolderIdx;    // folder currently shown in the list (-1 = root)
 
 private: //-- Helper
 
@@ -80,6 +121,11 @@ private: //-- Helper
 			m_files[ m_fileIndices[_fi] ].selected = false;
 	}
 
+	arcname makeArcName() const
+	{
+		return arcname( m_arcBaseDir, (const char*)m_arcShortName, (const char*)m_arcLongName );
+	}
+
 private: //-- Drag & drop processing
 
 	bool giveData( const FORMATETC& fmt, STGMEDIUM* stg, bool firstcall );
@@ -90,17 +136,32 @@ private: //-- Sort processing
 private: //-- Right click
 
 	void DoRMenu();
-	void GenerateDirMenu( HMENU m, int& id, StrArray* sx, const kiPath& pth );
 	void BuildFolderTree( HTREEITEM hRoot, int folderIconIdx );
 	void FilterListByFolder( int folderIdx );
 	void LayoutTopRow( int dlgW );
 	void LayoutPanes( int dlgW, int paneH );
 	void DrawSplitterGhost( int x );
 
+private: //-- Archive load/unload
+
+	void rebuildContent();
+	void loadArchive( CArchiver* parc, const kiPath& base,
+	                  const char* sname, const char* lname );
+	void unloadArchive();
+	void doFileOpen();
+	void openFromPath( const char* fullpath );
+	void handleDroppedFile( const char* path );
+	void updateMRU( const char* fullpath );
+	void rebuildMRUMenu();
+	void applyToolbarVisibility();
+	void applyTreeVisibility();
+
 private: //-- Extraction
 
 	CArchiver* m_pArc;
-	arcname m_fname;
+	kiPath m_arcBaseDir;
+	kiStr  m_arcLongName;
+	kiStr  m_arcShortName;
 	kiPath m_ddir, m_tdir;
 	aflArray m_files;
 

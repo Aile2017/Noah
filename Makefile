@@ -86,7 +86,7 @@ $(INTDIR)\ArcB2e.obj: ArcB2e.cpp ArcB2e.h Archiver.h $(PCH_FILE)
 $(INTDIR)\Archiver.obj: Archiver.cpp Archiver.h $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" Archiver.cpp
 
-$(INTDIR)\Noah.obj: Noah.cpp $(PCH_FILE)
+$(INTDIR)\Noah.obj: Noah.cpp SubDlg.h $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" Noah.cpp
 
 $(INTDIR)\NoahAM.obj: NoahAM.cpp NoahAM.h Archiver.h SubDlg.h $(PCH_FILE)

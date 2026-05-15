@@ -18,6 +18,8 @@ public: //-- Public interface ------------
 	unsigned long file_num() { return m_FName.len(); }
 	const kiPath& get_basepath() { return m_BasePathList[0]; }
 	bool map_melters( int mode );
+	// Find an extraction routine for a single file (NULL if not a recognized archive)
+	CArchiver* find_melter_for( const kiPath& fullpath );
 	bool map_compressor( const char* ext, const char* method, bool sfx );
 
 	// Extract (destination dir required; other info derived internally)
@@ -34,6 +36,8 @@ public: //-- Public interface ------------
 	void get_cmpmethod( const char* set, int& def_mhd, StrArray& mhd_list, bool need_ext=false, cCharArray* ext_list=NULL );
 	// Returns true if at least one b2e archiver is loaded
 	bool b2e_enabled() { return m_b2e; }
+	// Generate output folder name from archive filename
+	void generate_dirname( const char* src, kiPath& dst, bool rmn );
 
 
 private: //-- Internal processing ---------------------------
@@ -41,7 +45,6 @@ private: //-- Internal processing ---------------------------
 	// Double-folder elimination etc.
 	bool break_ddir( kiPath& dir, bool onlydir );
 	CArchiver* fromExt( const char* ext );
-	void generate_dirname( const char* src, kiPath& dst, bool rmn );
 
 	wfdArray m_FName;
 	kiArray<CArchiver*> m_AList;

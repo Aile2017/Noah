@@ -45,7 +45,6 @@ void CNoahConfigManager::load( loading_flag what )
 {
 	if( (what & Mode) && !(m_Loaded & Mode) ) //----------- Mode
 	{
-		m_Mode     = m_Ini.getInt( "Mode", 2 ) & 3;
 		m_MiniBoot = m_Ini.getBool( "MiniBoot", false );
 		m_OneExt   = m_Ini.getBool( "OneExt", false );
 		m_ZeroExt  = m_Ini.getBool( "NoExt", false );
@@ -80,7 +79,6 @@ void CNoahConfigManager::save()
 	kiStr tmp;
 
 	//-- Mode
-	m_Ini.putInt(  "Mode",           m_Mode );
 	m_Ini.putBool( "MiniBoot",       m_MiniBoot );
 	m_Ini.putBool( "OneExt",         m_OneExt );
 	m_Ini.putBool( "NoExt",          m_ZeroExt );
@@ -103,9 +101,12 @@ void CNoahConfigManager::save()
 	m_Ini.putStr( "ArcViewFont", m_Ini.getStr( "ArcViewFont", "Consolas" ) );
 }
 
-void CNoahConfigManager::dialog()
+void CNoahConfigManager::dialog( int startPage )
 {
+	load( All );
+
 	CNoahConfigDialog dlg;
+	if( startPage > 0 ) dlg.setStartPage( startPage );
 	dlg.createModeless( NULL );
 
 	app()->setMainWnd( &dlg );
@@ -222,6 +223,7 @@ bool CNoahConfigDialog::onOK()
 
 void CNoahConfigDialog::onApply()
 {
+	sendOK2All();
 	mycnf().save();
 	shift_and_button();
 }
@@ -272,9 +274,6 @@ BOOL CNoahConfigDialog::CCmprPage::onInit()
 	// Compression destination folder
 	dirinit( this, mycnf().cdirsm(), mycnf().codir(), mycnf().cdir() );
 
-	// Operation mode
-	sendMsgToItem( IDC_MODE1 + mycnf().mode(), BM_SETCHECK, TRUE );
-
 	// Compression format
 	correct( mycnf().cext(), true );
 	int ind = static_cast<int>(sendMsgToItem( IDC_CMPMHD, CB_FINDSTRINGEXACT, -1, (LPARAM)(const char*)mycnf().cmhd() ));
@@ -296,11 +295,6 @@ bool CNoahConfigDialog::CCmprPage::onOK()
 {
 	// Compression destination folder
 	dirok( this, mycnf().m_CDirSm, mycnf().m_CODir, mycnf().m_CDir );
-
-	// Operation mode
-	for( int i=0; i!=4; i++ )
-		if( BST_CHECKED==sendMsgToItem( IDC_MODE1 + i, BM_GETCHECK ) )
-			{ mycnf().m_Mode = i; break; }
 
 	// Compression format
 	char str[200]="";

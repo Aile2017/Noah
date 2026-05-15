@@ -43,6 +43,7 @@ public:
 
 public:
 	CNoahConfigDialog();
+	void setStartPage( int p ) { m_Header.nStartPage = (UINT)p; }
 
 private:
 	bool onOK();
@@ -71,7 +72,7 @@ public: //-- Operations
 	void init();
 	void load( loading_flag what );
 	void save();
-	void dialog();
+	void dialog( int startPage = 0 );
 
 public: //-- Generic INI accessors (for per-dialog persistence)
 	int         getInt( const char* key, int defval )         { return m_Ini.getInt(key, defval); }
@@ -82,7 +83,6 @@ public: //-- Generic INI accessors (for per-dialog persistence)
 public: //-- Interface for getting settings items
 
 	// Section: Mode
-	const int     mode()  { return m_Mode; }  // 0:compress-only 1:compress-preferred 2:extract-preferred 3:extract-only
 	const bool  miniboot(){ return m_MiniBoot; } // Start minimized?
 	const bool  oldver()  { return m_OldVer; }// Display version in old format
 	const int   extnum()  { return m_OneExt ? 1 : m_ZeroExt ? 0 : -1; } // Number of extensions to treat as part of archive name
@@ -109,7 +109,6 @@ private: //-- Internal variables
 	kiStr m_UserName;
 
 	// Settings items
-	int    m_Mode;
 	kiPath m_MDir, m_CDir;
 	bool   m_MODir,m_CODir,m_MDirSm,m_CDirSm;
 	int    m_MkDir;

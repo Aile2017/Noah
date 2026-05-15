@@ -81,15 +81,14 @@ BEGIN
                     TVS_HASBUTTONS | TVS_LINESATROOT | TVS_SHOWSELALWAYS |
                     WS_BORDER | WS_TABSTOP,0,20,80,126
     CONTROL         "List1",IDC_FILELIST,"SysListView32",LVS_REPORT |
-                    LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER |
+                    LVS_SHOWSELALWAYS | WS_BORDER |
                     WS_TABSTOP,82,20,268,126
-    LTEXT           "Extract to:",IDC_DDIRLABEL,7,6,40,8
-    EDITTEXT        IDC_DDIR,50,3,223,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_REF,276,3,13,14
-    PUSHBUTTON      "Extract &All",IDOK,319,3,36,14
-    PUSHBUTTON      "E&xtract",IDC_MELTEACH,358,3,26,14
-    DEFPUSHBUTTON   "&View",IDC_SHOW,387,3,19,14
-    PUSHBUTTON      "&Invert",IDC_SELECTINV,409,3,26,14
+    PUSHBUTTON      "",IDC_MELTEACH,3,3,15,14
+    PUSHBUTTON      "",IDC_SHOW,21,3,15,14
+    PUSHBUTTON      "",IDC_SETTINGS,39,3,15,14
+    LTEXT           "Extract to:",IDC_DDIRLABEL,61,6,40,8
+    EDITTEXT        IDC_DDIR,104,3,230,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_REF,337,3,13,14
     LTEXT           "",IDC_STATUSBAR,0,144,434,11
 END
 
@@ -107,21 +106,12 @@ BEGIN
     PUSHBUTTON      "...",IDC_REF,204,31,13,14,WS_GROUP
     CONTROL         "Open Folder",IDC_ODIR,"Button",BS_AUTOCHECKBOX | WS_GROUP |
                     WS_TABSTOP,150,18,65,9
-    GROUPBOX        "Method",IDC_STATIC,7,57,117,57
+    GROUPBOX        "Method",IDC_STATIC,7,57,215,57
     COMBOBOX        IDC_CMPEXT,13,81,33,163,CBS_DROPDOWNLIST | CBS_SORT |
                     CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_GROUP |
                     WS_TABSTOP
-    COMBOBOX        IDC_CMPMHD,49,81,66,79,CBS_DROPDOWNLIST |
+    COMBOBOX        IDC_CMPMHD,49,81,164,79,CBS_DROPDOWNLIST |
                     CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Operation",IDC_STATIC,133,57,89,57
-    CONTROL         "Compress Only",IDC_MODE1,"Button",BS_AUTORADIOBUTTON |
-                    WS_GROUP,145,69,71,10
-    CONTROL         "Auto (Compress)",IDC_MODE2,"Button",BS_AUTORADIOBUTTON,145,79,69,
-                    10
-    CONTROL         "Auto (Extract)",IDC_MODE3,"Button",BS_AUTORADIOBUTTON |
-                    WS_TABSTOP,145,89,70,10
-    CONTROL         "Extract Only",IDC_MODE4,"Button",BS_AUTORADIOBUTTON,145,
-                    99,70,10
 END
 
 IDD_MLTCFG DIALOG DISCARDABLE  0, 0, 229, 121
@@ -232,6 +222,9 @@ END
 //
 
 IDI_MAIN                ICON    DISCARDABLE     "noah.ico"
+IDB_EXTRACT             BITMAP  DISCARDABLE     "res\\Extract.bmp"
+IDB_VIEW                BITMAP  DISCARDABLE     "res\\View.bmp"
+IDB_SETTINGS            BITMAP  DISCARDABLE     "res\\Settings.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -241,7 +234,46 @@ IDI_MAIN                ICON    DISCARDABLE     "noah.ico"
 IDR_ACCEL ACCELERATORS DISCARDABLE
 BEGIN
     "F",            IDA_MYDIR,              VIRTKEY, CONTROL, NOINVERT
+    "O",            IDM_FILE_OPEN,          VIRTKEY, CONTROL, NOINVERT
     VK_F1,          IDA_HELP,               VIRTKEY, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_ARCVIEW_MENU MENU DISCARDABLE
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Open...\tCtrl+O",                   IDM_FILE_OPEN
+        POPUP "Recent &Files"
+        BEGIN
+            MENUITEM "(No recent files)",              IDM_FILE_MRU_FIRST, GRAYED
+        END
+        MENUITEM "&Close",                             IDM_FILE_CLOSE
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                              IDM_FILE_EXIT
+    END
+    POPUP "&Operations"
+    BEGIN
+        MENUITEM "Extract &All",                       IDM_OPS_EXTRACTALL
+        MENUITEM "Extract &Selected Files",            IDM_OPS_EXTRACTSEL
+        MENUITEM "&Open with Associated Application",  IDM_OPS_OPEN
+        MENUITEM SEPARATOR
+        MENUITEM "&Settings...",                       IDM_OPS_SETTINGS
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Toolbar",                           IDM_VIEW_TOOLBAR, CHECKED
+        MENUITEM "Folder &Tree",                       IDM_VIEW_TREE, CHECKED
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About Noah...",                     IDM_HELP_ABOUT
+    END
 END
 
 
@@ -264,6 +296,10 @@ BEGIN
     IDS_EXECUTING           "An application launched by Noah is still running. Do you really want to close?"
     IDS_NOLIST              "Error: Cannot list the contents of this archive."
     IDS_ARCVIEW_MSG         "[%d files] [%s]"
+    IDS_RM_EXTRACTALL       "Extract All"
+    IDS_RM_EXTRACTSEL       "Extract Selected Files"
+    IDS_RM_OPEN             "Open with Associated Application"
+    IDS_MRU_NONE            "(No recent files)"
 END
 
 #endif    // English resources
