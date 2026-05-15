@@ -274,7 +274,7 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About Noah...",                     IDM_HELP_ABOUT
+        MENUITEM "&About Noah...\tF1",                 IDM_HELP_ABOUT
     END
 END
 
