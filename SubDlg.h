@@ -50,6 +50,7 @@ private: //-- Processing as dialog
 
 	BOOL CALLBACK proc( UINT msg, WPARAM wp, LPARAM lp );
 	BOOL onInit();
+	bool onOK();
 	bool onCancel();
 	void setdir()
 		{
@@ -139,7 +140,7 @@ private: //-- Sort processing
 
 private: //-- Right click
 
-	void DoRMenu();
+	void DoRMenu(POINT pt);
 	void BuildFolderTree( HTREEITEM hRoot, int folderIconIdx );
 	void FilterListByFolder( int folderIdx );
 	void LayoutTopRow( int dlgW );

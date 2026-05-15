@@ -236,6 +236,8 @@ BEGIN
     "F",            IDA_MYDIR,              VIRTKEY, CONTROL, NOINVERT
     "O",            IDM_FILE_OPEN,          VIRTKEY, CONTROL, NOINVERT
     VK_F1,          IDA_HELP,               VIRTKEY, NOINVERT
+    VK_F4,          IDM_FILE_CLOSE,         VIRTKEY, CONTROL, NOINVERT
+    VK_F5,          IDM_OPS_EXTRACTALL,     VIRTKEY, NOINVERT
 END
 
 
@@ -253,13 +255,13 @@ BEGIN
         BEGIN
             MENUITEM "(No recent files)",              IDM_FILE_MRU_FIRST, GRAYED
         END
-        MENUITEM "&Close",                             IDM_FILE_CLOSE
+        MENUITEM "&Close\tCtrl+F4",                    IDM_FILE_CLOSE
         MENUITEM SEPARATOR
-        MENUITEM "E&xit",                              IDM_FILE_EXIT
+        MENUITEM "E&xit\tEsc",                         IDM_FILE_EXIT
     END
     POPUP "&Operations"
     BEGIN
-        MENUITEM "Extract &All",                       IDM_OPS_EXTRACTALL
+        MENUITEM "Extract &All\tF5",                   IDM_OPS_EXTRACTALL
         MENUITEM "Extract &Selected Files",            IDM_OPS_EXTRACTSEL
         MENUITEM "&Open with Associated Application",  IDM_OPS_OPEN
         MENUITEM SEPARATOR

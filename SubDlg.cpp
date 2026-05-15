@@ -220,6 +220,16 @@ BOOL CArcViewDlg::onInit()
 	return FALSE;
 }
 
+bool CArcViewDlg::onOK()
+{
+	// IsDialogMessage converts Enter to WM_COMMAND(IDOK) when a non-button
+	// control has focus. Treat it as IDC_SHOW when the list has focus;
+	// never close the main window on Enter.
+	if( ::GetFocus() == item(IDC_FILELIST) )
+		sendMsg( WM_COMMAND, IDC_SHOW );
+	return false;
+}
+
 bool CArcViewDlg::onCancel()
 {
 	//-- Save window size and splitter position
@@ -564,10 +574,34 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			}
 			else if( phdr->code==NM_RCLICK )
 			{
+				POINT pt; ::GetCursorPos( &pt );
 				clearSelections();
 				if( setSelection() )
-					DoRMenu();
+					DoRMenu( pt );
 			}
+		}
+		break;
+
+	case WM_CONTEXTMENU:
+		// Application key (lParam==-1) while ListView has focus: show context menu
+		// at the selected item's position. Mouse right-click is handled via NM_RCLICK.
+		if( (HWND)wp == item(IDC_FILELIST) && lp == (LPARAM)-1 && m_pArc && m_bAble )
+		{
+			POINT pt = {0, 0};
+			int iSel = (int)::SendMessage( item(IDC_FILELIST), LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED );
+			if( iSel < 0 )
+				iSel = (int)::SendMessage( item(IDC_FILELIST), LVM_GETSELECTIONMARK, 0, 0 );
+			if( iSel >= 0 )
+			{
+				RECT rc; rc.left = LVIR_BOUNDS;
+				if( ::SendMessage( item(IDC_FILELIST), LVM_GETITEMRECT, iSel, (LPARAM)&rc ) )
+					pt.x = rc.left, pt.y = rc.bottom;
+			}
+			::ClientToScreen( item(IDC_FILELIST), &pt );
+			clearSelections();
+			if( setSelection() )
+				DoRMenu( pt );
+			return TRUE;
 		}
 		break;
 
@@ -1252,7 +1286,7 @@ void CArcViewDlg::FilterListByFolder( int folderIdx )
 	::InvalidateRect( item(IDC_FILELIST), NULL, TRUE );
 }
 
-void CArcViewDlg::DoRMenu()
+void CArcViewDlg::DoRMenu(POINT pt)
 {
 	enum { RM_EXTRACTALL = 1, RM_EXTRACTSEL, RM_OPEN };
 
@@ -1261,7 +1295,6 @@ void CArcViewDlg::DoRMenu()
 	::AppendMenu( m, MF_STRING, RM_EXTRACTSEL, kiStr().loadRsrc(IDS_RM_EXTRACTSEL) );
 	::AppendMenu( m, MF_STRING, RM_OPEN,       kiStr().loadRsrc(IDS_RM_OPEN) );
 
-	POINT pt; ::GetCursorPos( &pt );
 	int id = ::TrackPopupMenu( m,
 		TPM_LEFTALIGN|TPM_TOPALIGN|TPM_RETURNCMD|TPM_NONOTIFY,
 		pt.x, pt.y, 0, hwnd(), NULL );
