@@ -1467,8 +1467,6 @@ void CArcViewDlg::loadArchive( CArchiver* parc, const kiPath& base,
 			myarc().generate_dirname( lname, m_ddir, rmn );  // Use long name for proper directory generation
 		}
 		m_ddir.beBackSlash( true );
-		m_ddir.mkdir();
-		m_ddir.beShortPath();
 	}
 
 	//-- Title: "Noah - filename"
