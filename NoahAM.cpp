@@ -334,21 +334,11 @@ void CNoahArchiverManager::do_melting( kiPath& destdir )
 			//-- Output destination
 
 			int mk=2; // 0:no 1:yes 2:???
-			kiPath ddir( destdir ), dnm;
+			kiPath ddir( destdir );
 			if( mdf==0 )
 				mk=0;
 			else if( mdf==3 )
 				mk=1;
-			else
-			{
-				kiPath anm(m_BasePathList[i]);
-				anm+=m_FName[i].cFileName;
-				int c = m_Melters[i]->contents( anm, dnm );
-				if( c==aSingleDir || (c==aSingleFile && mdf==1) )
-					mk=0; // Double-folder prevention (strong)
-				else if( c==aMulti )
-					mk=1;
-			}
 			if( mk )
 			{
 				generate_dirname( m_FName[i].cFileName, ddir, rmn );
@@ -367,9 +357,6 @@ void CNoahArchiverManager::do_melting( kiPath& destdir )
 			{
 				if( mk==2 ) // Double-folder prevention (weak)
 					break_ddir( ddir, mdf==2 );
-				else if( mk==0 && dnm.len() ) // Double-folder prevention (strong)
-					if( dnm.len()<=1 || dnm[1]!=':' ) // Do not open absolute paths
-						ddir+=dnm, ddir+='\\';
 				// Maybe open output destination
 				myapp().open_folder( ddir, 1 );
 			}

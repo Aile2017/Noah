@@ -49,7 +49,6 @@ void CNoahConfigManager::load( loading_flag what )
 		m_OneExt   = m_Ini.getBool( "OneExt", false );
 		m_ZeroExt  = m_Ini.getBool( "NoExt", false );
 		{ int v = m_Ini.getInt( "MultiBootLimit", 4 ); m_MbLim = v < 1 ? 1 : v; }
-		m_OldVer   = m_Ini.getBool( "OldAbout", false );
 	}
 	if( (what & Melt) && !(m_Loaded & Melt) ) //----------- Extraction
 	{
@@ -83,7 +82,6 @@ void CNoahConfigManager::save()
 	m_Ini.putBool( "OneExt",         m_OneExt );
 	m_Ini.putBool( "NoExt",          m_ZeroExt );
 	m_Ini.putInt(  "MultiBootLimit", m_MbLim );
-	m_Ini.putBool( "OldAbout",       m_OldVer );
 	//-- Extraction
 	encode_dir( tmp, m_MDirSm, m_MDir );
 	m_Ini.putStr( "MDir", tmp );

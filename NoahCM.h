@@ -84,7 +84,6 @@ public: //-- Interface for getting settings items
 
 	// Section: Mode
 	const bool  miniboot(){ return m_MiniBoot; } // Start minimized?
-	const bool  oldver()  { return m_OldVer; }// Display version in old format
 	const int   extnum()  { return m_OneExt ? 1 : m_ZeroExt ? 0 : -1; } // Number of extensions to treat as part of archive name
 	const int multiboot_limit() { return m_MbLim; } // Multiple-instance limit
 	// Section: Melt
@@ -118,7 +117,6 @@ private: //-- Internal variables
 	kiStr  m_CMhd;
 	bool   m_MNoNum;
 	bool   m_MiniBoot;
-	bool   m_OldVer;
 	bool   m_OneExt, m_ZeroExt;
 
 public:

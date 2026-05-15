@@ -7,9 +7,6 @@
 enum {
 	aMelt = 2, aList = 4, aMeltEach = 8, aCompress = 16, aArchive = 32, aSfx = 64,
 };
-enum {
-	aUnknown=0, aSingleFile, aSingleDir, aMulti
-};
 
 struct arcname {
 	arcname( const kiPath& b,const char *s,const char *l )
@@ -47,7 +44,6 @@ public: //--< attribute >--
 
 public: //--< action >--
 
-	int  contents( const kiPath& aname, kiPath& dname );
 	int  melt( const arcname& aname, const kiPath& ddir, const aflArray* files=NULL );
 	bool list( const arcname& aname, aflArray& files );
 	int  compress( const kiPath& base, const wfdArray& files, const kiPath& ddir, int method, bool sfx );
@@ -61,7 +57,6 @@ protected: //--< for child >--
 
 	virtual int  v_load(){return 0;}
 	virtual bool v_ver( kiStr& str ){return false;}
-	virtual int  v_contents( const kiPath& aname, kiPath& dname ){return aUnknown;}
 	virtual int  v_melt( const arcname& aname, const kiPath& ddir, const aflArray* files ){return false;}
 	virtual bool v_list( const arcname& aname, aflArray& files ){return false;}
 	virtual int  v_compress( const kiPath& base, const wfdArray& files, const kiPath& ddir, int method, bool sfx ){return false;}
@@ -101,11 +96,6 @@ inline int CArchiver::cancompressby( const char* ext, const char* mhd, bool sfx 
 }
 
 
-inline int CArchiver::contents( const kiPath& aname, kiPath& dname )
-{
-	ensure_loaded();
-	return (m_Able&aList)?v_contents(aname,dname):false;
-}
 
 inline int CArchiver::melt( const arcname& aname, const kiPath& ddir, const aflArray* files )
 {
@@ -207,7 +197,7 @@ public:
 		// Create by specifying the command name to execute.
 		//  - If found as a file, treat it as an executable.
 		//  - Otherwise assume it is a shell command and keep it as-is.
-	CArcModule( const char* name, bool us=false );
+	CArcModule( const char* name );
 	virtual ~CArcModule() {}
 	bool exist();
 
@@ -220,7 +210,7 @@ public:
 		const char* BL, int BSL, const char* EL, int SL, int dx );
 
 private:
-	enum { NOTEXIST=0, EXE, EXEUS, SHLCMD } m_type;
+	enum { NOTEXIST=0, EXE, SHLCMD } m_type;
 	char         m_name[MAX_PATH];
 };
 

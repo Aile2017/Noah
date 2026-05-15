@@ -54,7 +54,7 @@ bool CArcB2e::v_ver( kiStr& str )
 
 bool CArcB2e::load_module( const char* name )
 {
-	exe = new CArcModule( name, m_usMode );
+	exe = new CArcModule( name );
 	return exe->exist();
 }
 
@@ -304,13 +304,6 @@ bool CArcB2e::CB2eCore::exec_function( const kiVar& name, const CharArray& a, co
 			//---------------------------//
 			if( c>=2 )
 			{
-				x->m_usMode = false;
-				if( c>=3 )
-				{
-					getarg( a[2],b[2],&t );
-					x->m_usMode = ( t=="us" );
-				}
-
 				getarg( a[1],b[1],&t );
 				if( x->load_module(t) )
 					*r = "exec";
@@ -439,7 +432,7 @@ bool CArcB2e::CB2eCore::exec_function( const kiVar& name, const CharArray& a, co
 					kiVar mm;
 					getarg( a[i],b[i],&mm );
 					i++;
-					xxx = new CArcModule( mm, x->m_usMode );
+					xxx = new CArcModule( mm );
 				}
 				for( ; i<c; i++ )
 					getarg( a[i],b[i],&t ), cmd+=t, cmd+=' ';
@@ -480,7 +473,7 @@ bool CArcB2e::CB2eCore::exec_function( const kiVar& name, const CharArray& a, co
 					kiVar mm;
 					getarg( a[i],b[i],&mm );
 					i++;
-					xxx = new CArcModule( mm, x->m_usMode );
+					xxx = new CArcModule( mm );
 				}
 
 				kiVar cmd;

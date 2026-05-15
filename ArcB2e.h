@@ -67,7 +67,6 @@ private: //--<RythpScript>--
 	// script interface
 	bool load_module( const char* name );
 	int m_Result;
-	bool m_usMode;
 	const arcname*  m_psArc;
 	const kiPath*   m_psDir;
 	const int*      m_psMhd;

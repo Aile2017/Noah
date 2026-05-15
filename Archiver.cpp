@@ -7,7 +7,7 @@
 
 
 
-CArcModule::CArcModule( const char* name, bool us )
+CArcModule::CArcModule( const char* name )
 {
 	char prev_cur[MAX_PATH];
 	::GetCurrentDirectory(MAX_PATH, prev_cur);
@@ -15,7 +15,7 @@ CArcModule::CArcModule( const char* name, bool us )
 
 	if( 0!=::SearchPath( NULL,name,NULL,MAX_PATH,m_name,NULL ) )
 	{
-		m_type = us ? EXEUS : EXE;
+		m_type = EXE;
 	}
 	else
 	{
@@ -30,7 +30,6 @@ CArcModule::CArcModule( const char* name, bool us )
 int CArcModule::cmd( const char* cmd, bool mini )
 {
 	// Build shell command prefix
-	kiPath tmpdir;
 	static const char* const closeShell = "cmd.exe /c ";
 
 	// Build command string
@@ -43,25 +42,6 @@ int CArcModule::cmd( const char* cmd, bool mini )
 	{
 		// Shell command case
 		theCmd = closeShell + theCmd;
-	}
-	else if( m_type==EXEUS )
-	{
-		// US mode case: pass command via environment variable
-		::SetEnvironmentVariable( "NOAHCMD", theCmd );
-		theCmd = "%NOAHCMD%";
-
-		// Generate switch batch file
-		myapp().get_tempdir(tmpdir);
-		kiPath batname(tmpdir);
-		batname += "ncmd.bat";
-		kiFile bat;
-		bat.open( batname,false );
-		bat.write( "@CHCP 437\r\n@", 12 );
-		bat.write( theCmd, theCmd.len() );
-		bat.write( "\r\n@CHCP 932\r\n", 13 );
-
-		theCmd  = closeShell;
-		theCmd += batname;
 	}
 
 	// Start process
@@ -88,8 +68,6 @@ int CArcModule::cmd( const char* cmd, bool mini )
 	::CloseHandle( pi.hProcess );
 
 	// Cleanup
-	if( m_type==EXEUS )
-		tmpdir.remove();
 	return ex;
 }
 
@@ -124,7 +102,7 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 	int /*ct=0,*/ step=BSL;
 
 	// Non-EXE types are not supported here
-	if( m_type!=EXE && m_type!=EXEUS )
+	if( m_type!=EXE )
 		return false;
 
 	// Build command string
@@ -316,10 +294,6 @@ bool CArcModule::lst_exe( const char* lstcmd, aflArray& files,
 
 bool CArchiver::GetVersionInfoStr( char* name, char* buf, size_t cbBuf )
 {
-	static bool old = mycnf().oldver();
-	if( old )
-		return false;
-
 	DWORD dummy = 0;
 	DWORD siz = ::GetFileVersionInfoSize( name, &dummy );
 	if( siz == 0 )
