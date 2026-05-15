@@ -103,9 +103,22 @@ void CNoahConfigManager::dialog( int startPage )
 {
 	load( All );
 
+	HWND hwndOwner = app()->mainwnd() ? app()->mainwnd()->hwnd() : NULL;
+
 	CNoahConfigDialog dlg;
 	if( startPage > 0 ) dlg.setStartPage( startPage );
 	dlg.createModeless( NULL );
+
+	if( hwndOwner && dlg.isAlive() )
+	{
+		RECT rm, rd;
+		::GetWindowRect( hwndOwner,  &rm );
+		::GetWindowRect( dlg.hwnd(), &rd );
+		int w = rd.right - rd.left, h = rd.bottom - rd.top;
+		int x = rm.left + (rm.right  - rm.left - w) / 2;
+		int y = rm.top  + (rm.bottom - rm.top  - h) / 2;
+		::SetWindowPos( dlg.hwnd(), NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
+	}
 
 	app()->setMainWnd( &dlg );
 
