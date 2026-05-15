@@ -134,7 +134,7 @@ $(INTDIR)/Noah.o:     SubDlg.h
 $(INTDIR)/NoahAM.o:   NoahAM.h Archiver.h SubDlg.h
 $(INTDIR)/SubDlg.o:   SubDlg.h Archiver.h
 
-$(RES): Noah.rc Resource.h Noah.ico | $(INTDIR)
+$(RES): Noah.rc Resource.h res/Noah.ico | $(INTDIR)
 	$(WINDRES) -F pe-x86-64 -O coff -o $@ Noah.rc
 
 $(MANIFEST_RES): manifest_embed.rc manifest.xml | $(INTDIR)

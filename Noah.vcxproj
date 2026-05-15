@@ -99,7 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="manifest.xml" />
-    <None Include="Noah.ico" />
+    <None Include="res\Noah.ico" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ArcB2e.cpp" />

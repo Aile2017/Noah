@@ -221,7 +221,7 @@ END
 // Icon
 //
 
-IDI_MAIN                ICON    DISCARDABLE     "noah.ico"
+IDI_MAIN                ICON    DISCARDABLE     "res\\Noah.ico"
 IDB_EXTRACT             BITMAP  DISCARDABLE     "res\\Extract.bmp"
 IDB_VIEW                BITMAP  DISCARDABLE     "res\\View.bmp"
 IDB_SETTINGS            BITMAP  DISCARDABLE     "res\\Settings.bmp"

@@ -129,7 +129,7 @@ $(INTDIR)\kl_wnd.obj: kilib\kl_wnd.cpp $(PCH_FILE)
     $(CC) $(CFLAGS) /Yu"$(PCH_HDR)" kilib\kl_wnd.cpp
 
 # Resource
-$(INTDIR)\Noah.res: Noah.rc Resource.h Noah.ico
+$(INTDIR)\Noah.res: Noah.rc Resource.h res\Noah.ico
     $(RC) /nologo /fo"$(INTDIR)\Noah.res" Noah.rc
 
 clean:
