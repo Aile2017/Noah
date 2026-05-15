@@ -126,6 +126,10 @@ private: //-- Helper
 		return arcname( m_arcBaseDir, (const char*)m_arcShortName, (const char*)m_arcLongName );
 	}
 
+	void updateDdirDisplay();
+	void setOperationControls( bool enable );
+	void reportMeltResult( int result );
+
 private: //-- Drag & drop processing
 
 	bool giveData( const FORMATETC& fmt, STGMEDIUM* stg, bool firstcall );
