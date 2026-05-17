@@ -1618,7 +1618,15 @@ void CArcViewDlg::handleDroppedFile( const char* path )
 
 void CArcViewDlg::updateMRU( const char* fullpath )
 {
-	push_mru_entry( m_mruList, fullpath );
+	// Copy path to a local buffer before modifying m_mruList: fullpath often
+	// points directly into m_mruList[0].m_pBuf, which push_mru_entry's
+	// left-shift would overwrite in-place, corrupting the value.
+	char local[MAX_PATH];
+	::lstrcpy( local, fullpath );
+	// Re-read from INI so we don't overwrite entries added by other dialogs
+	// or processes (rememberMRU) since this dialog was initialized.
+	load_mru_list( m_mruList );
+	push_mru_entry( m_mruList, local );
 	persist_mru_list( m_mruList );
 	rebuildMRUMenu();
 }
