@@ -68,6 +68,21 @@ static void push_mru_entry( StrArray& list, const char* fullpath )
 		list.forcelen( 10 );
 }
 
+static void remove_mru_entry( StrArray& list, const char* fullpath )
+{
+	for( unsigned int i=0; i<list.len(); )
+	{
+		if( 0 == ::lstrcmpi( (const char*)list[i], fullpath ) )
+		{
+			for( unsigned int j=i; j+1<list.len(); j++ )
+				list[j] = list[j+1];
+			list.forcelen( list.len()-1 );
+			continue;
+		}
+		i++;
+	}
+}
+
 // Extract the last path component (without trailing separator) of a folder
 // path that ends in '/' or '\' (e.g. "foo/bar/" -> "bar").
 static void extract_folder_leaf( const char* path, char* out )
@@ -744,7 +759,22 @@ BOOL CALLBACK CArcViewDlg::proc( UINT msg, WPARAM wp, LPARAM lp )
 			{
 				unsigned int idx = LOWORD(wp) - IDM_FILE_MRU_FIRST;
 				if( idx < m_mruList.len() )
-					openFromPath( (const char*)m_mruList[idx] );
+				{
+					char local[MAX_PATH];
+					::lstrcpy( local, (const char*)m_mruList[idx] );
+					if( !kiSUtil::exist(local) )
+					{
+						char msg[MAX_PATH + 64];
+						wsprintf( msg, "File not found:\n%s\n\nThis entry will be removed from history.", local );
+						app()->msgBox( msg, "Noah" );
+						load_mru_list( m_mruList );
+						remove_mru_entry( m_mruList, local );
+						persist_mru_list( m_mruList );
+						rebuildMRUMenu();
+					}
+					else
+						openFromPath( local );
+				}
 				return TRUE;
 			}
 			break;
