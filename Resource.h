@@ -68,6 +68,8 @@
 #define IDB_VIEW                        301
 #define IDB_SETTINGS                    302
 #define IDC_SETTINGS                    1062
+#define IDC_SEP1                        1063
+#define IDC_SEP2                        1064
 #define IDA_MYDIR                       40001
 #define IDA_HELP                        40002
 

@@ -268,9 +268,6 @@ void CNoahArchiverManager::get_cmpmethod(
 void CNoahArchiverManager::do_listing( kiPath& destdir )
 {
 	kiWindow* mptr = app()->mainwnd();
-	kiPath ddir;
-	int    mdf = mycnf().mkdir();
-	bool   rmn = mycnf().mnonum();
 	destdir.beBackSlash( true );
 
 	//-- Clear dialog instance counter
@@ -288,16 +285,11 @@ void CNoahArchiverManager::do_listing( kiPath& destdir )
 		arcpath += m_FName[i].cFileName;
 		CArcViewDlg::rememberMRU( arcpath );
 
-		ddir = destdir;
-
-		if( mdf )
-			generate_dirname( m_FName[i].cFileName, ddir, rmn );
-
 		CArcViewDlg* x = new CArcViewDlg( m_Melters[i],
 			m_BasePathList[i],
 			m_FName[i].cAlternateFileName,
 			m_FName[i].cFileName,
-			ddir );
+			destdir );
 		views.add( x );
 		x->createModeless( NULL );
 		// onInit() shows the window and calls setFront() before the archiver

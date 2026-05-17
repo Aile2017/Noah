@@ -58,6 +58,11 @@ private: //-- Processing as dialog
 			sendMsgToItem( IDC_DDIR, WM_GETTEXT, MAX_PATH, (LPARAM)str );
 			m_ddir = str;
 			m_ddir.beBackSlash( true );
+			if( mycnf().mkdir() )
+			{
+				myarc().generate_dirname( (const char*)m_arcLongName, m_ddir, mycnf().mnonum() );
+				m_ddir += '\\';
+			}
 			m_ddir.mkdir();
 			m_ddir.beShortPath();
 		}

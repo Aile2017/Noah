@@ -12,7 +12,7 @@ Noah itself has no built-in archive engine — it delegates all archive operatio
 - **Drag & Drop operation** — drop files/folders to compress, drop an archive to extract
 - **Auto mode selection** — automatically detects whether to compress or extract based on what is dropped and the current mode setting
 - **B2E script engine** — supports any archive format for which a B2E script and the corresponding external tool (e.g. 7-Zip, zip, tar …) are available
-- **Archive viewer** — list archive contents before extracting; supports password entry
+- **Archive viewer** — list archive contents before extracting; password entry is delegated to the external tool's own prompt (which may open a console window behind Noah — check the taskbar if Noah appears to hang)
 - **Configurable extraction destination** — fixed folder, same folder as source, or prompted each time
 - **Subdirectory creation control** — choose when to create a folder for extracted files (never / single file / multiple files / always)
 - **Multiple instance limit** — prevents too many simultaneous archive operations
