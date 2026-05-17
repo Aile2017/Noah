@@ -7,7 +7,7 @@
 #undef  WINVER
 #define WINVER    0x0400
 #undef  _WIN32_IE
-#define _WIN32_IE 0x0200
+#define _WIN32_IE 0x0700
 #include <windows.h>
 
 // shell header
