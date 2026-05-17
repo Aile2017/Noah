@@ -904,7 +904,8 @@ void CArcViewDlg::LayoutTopRow( int dlgW )
 	const int margin   = 4;
 	const int gap      = 2;
 	const int labelGap = -8;
-	const int groupGap = 10;
+	const int sepW     = 2;
+	const int sepGap   = 4;
 
 	RECT rcLabel, rcEdit, rcRef, rcMelt, rcShow, rcSett;
 	::GetWindowRect( item(IDC_DDIRLABEL), &rcLabel );
@@ -934,18 +935,22 @@ void CArcViewDlg::LayoutTopRow( int dlgW )
 	const int labelY = (topBandH - labelH) / 2 + shiftY;
 	const int editY  = (topBandH - editH ) / 2 + shiftY;
 	const int refY   = (topBandH - refH  ) / 2 + shiftY;
+	const int sepH   = meltH - 4;
+	const int sepY   = (topBandH - sepH) / 2 + shiftY;
 
-	// Icon buttons on the LEFT, label+edit+browse on the right
+	// Icon buttons on the LEFT, separators around Settings, label+edit+browse on the right
 	int x = margin;
 	const int meltX  = x; x += meltW + gap;
-	const int showX  = x; x += showW + gap;
-	const int settX  = x; x += settW + groupGap;
+	const int showX  = x; x += showW + sepGap;
+	const int sep1X  = x; x += sepW + sepGap;
+	const int settX  = x; x += settW + sepGap;
+	const int sep2X  = x; x += sepW + sepGap;
 	const int labelX = x; x += labelW + labelGap;
 	const int editX  = x;
 	const int refX   = dlgW - margin - refW;
 	const int editW  = refX - gap - editX;
 
-	HDWP hdwp = ::BeginDeferWindowPos( 6 );
+	HDWP hdwp = ::BeginDeferWindowPos( 8 );
 	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_MELTEACH), NULL,
 			meltX, meltY, meltW, meltH, SWP_NOOWNERZORDER|SWP_NOZORDER );
@@ -953,8 +958,14 @@ void CArcViewDlg::LayoutTopRow( int dlgW )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_SHOW), NULL,
 			showX, showY, showW, showH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDC_SEP1), NULL,
+			sep1X, sepY, sepW, sepH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_SETTINGS), NULL,
 			settX, settY, settW, settH, SWP_NOOWNERZORDER|SWP_NOZORDER );
+	if( hdwp )
+		hdwp = ::DeferWindowPos( hdwp, item(IDC_SEP2), NULL,
+			sep2X, sepY, sepW, sepH, SWP_NOOWNERZORDER|SWP_NOZORDER );
 	if( hdwp )
 		hdwp = ::DeferWindowPos( hdwp, item(IDC_DDIRLABEL), NULL,
 			labelX, labelY, labelW, labelH, SWP_NOOWNERZORDER|SWP_NOZORDER );
@@ -1452,9 +1463,7 @@ void CArcViewDlg::rebuildContent()
 			m_fileIndices.forcelen( write );
 		}
 
-		// Status bar reports the post-filter file count so that directory
-		// entries (e.g. 7z "D...." rows) are not double-counted alongside
-		// the synthesized folder rows.
+		// Status bar reports the total file count (files + directory entries)
 		{
 			char tmp[255];
 			kiStr full_filename = m_arcBaseDir + (const char*)m_arcLongName;
@@ -1650,9 +1659,9 @@ void CArcViewDlg::rebuildMRUMenu()
 
 void CArcViewDlg::applyToolbarVisibility()
 {
-	static const UINT items[] = {IDC_MELTEACH,IDC_SHOW,IDC_SETTINGS,IDC_DDIRLABEL,IDC_DDIR,IDC_REF};
+	static const UINT items[] = {IDC_MELTEACH,IDC_SHOW,IDC_SEP1,IDC_SETTINGS,IDC_SEP2,IDC_DDIRLABEL,IDC_DDIR,IDC_REF};
 	int sw = m_bShowToolbar ? SW_SHOW : SW_HIDE;
-	for( int i=0; i<6; i++ )
+	for( int i=0; i<8; i++ )
 		::ShowWindow( item(items[i]), sw );
 	m_listTop = m_bShowToolbar ? m_topRowH : 0;
 
