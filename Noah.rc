@@ -85,8 +85,10 @@ BEGIN
                     WS_TABSTOP,82,20,268,126
     PUSHBUTTON      "",IDC_MELTEACH,3,3,15,14
     PUSHBUTTON      "",IDC_SHOW,21,3,15,14
-    PUSHBUTTON      "",IDC_SETTINGS,39,3,15,14
-    LTEXT           "Extract to:",IDC_DDIRLABEL,61,6,40,8
+    CONTROL         "",IDC_STATIC,"STATIC",SS_ETCHEDVERT,37,5,2,10
+    PUSHBUTTON      "",IDC_SETTINGS,41,3,15,14
+    CONTROL         "",IDC_STATIC,"STATIC",SS_ETCHEDVERT,58,5,2,10
+    LTEXT           "Extract to:",IDC_DDIRLABEL,62,6,40,8
     EDITTEXT        IDC_DDIR,104,3,230,14,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_REF,337,3,13,14
     LTEXT           "",IDC_STATUSBAR,0,144,434,11
@@ -297,7 +299,7 @@ BEGIN
     IDS_PATH                "PATH"
     IDS_EXECUTING           "An application launched by Noah is still running. Do you really want to close?"
     IDS_NOLIST              "Error: Cannot list the contents of this archive."
-    IDS_ARCVIEW_MSG         "[%d files] [%s]"
+    IDS_ARCVIEW_MSG         "%d files [%s]"
     IDS_RM_EXTRACTALL       "Extract All"
     IDS_RM_EXTRACTSEL       "Extract Selected Files"
     IDS_RM_OPEN             "Open with Associated Application"
